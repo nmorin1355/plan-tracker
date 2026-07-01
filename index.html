@@ -21,6 +21,7 @@
     --gold: #a97a24;
     --gold-bright: #cc9938;
     --slate: #35526a;
+    --row-current: #e6ede8;
     --shadow: 0 1px 3px rgba(26,35,29,0.06), 0 8px 24px rgba(26,35,29,0.05);
   }
   html[data-theme="dark"] {
@@ -38,6 +39,7 @@
     --gold: #dfb256;
     --gold-bright: #f0c97a;
     --slate: #86aecb;
+    --row-current: #233021;
     --shadow: 0 1px 3px rgba(0,0,0,0.35), 0 8px 28px rgba(0,0,0,0.4);
   }
   .theme-toggle {
@@ -198,7 +200,7 @@
   table.plan-table th, table.plan-table td { text-align: right; padding: 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
   table.plan-table th:first-child, table.plan-table td:first-child { text-align: left; }
   table.plan-table th { color: var(--ink-faint); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; }
-  table.plan-table tr.current-row { background: #e6ede8; }
+  table.plan-table tr.current-row { background: var(--row-current); }
   table.plan-table tr.current-row td:first-child { font-weight: 700; color: var(--pine); }
   .salary-input {
     width: 100px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px;
@@ -216,6 +218,40 @@
   .save-indicator.show { opacity: 1; transform: translateY(0); }
 
   footer { text-align: center; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-faint); margin-top: 2.5rem; }
+
+  /* ---------- Responsive: phone & tablet ---------- */
+  html { -webkit-text-size-adjust: 100%; }
+  /* Wide tables scroll horizontally on their own instead of forcing the whole page sideways */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .checkin-log { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Touch devices: inputs must be >=16px or iOS Safari zooms the page on focus */
+  @media (pointer: coarse) {
+    .field input, .adv-field input, .salary-input,
+    input[type="number"], input[type="text"], input[type="password"], input[type="date"] {
+      font-size: 16px;
+    }
+    .salary-input { width: 108px; }
+    /* Bigger hit targets for thumbs */
+    input[type="range"] { height: 6px; }
+    input[type="range"]::-webkit-slider-thumb { width: 26px; height: 26px; }
+    input[type="range"]::-moz-range-thumb { width: 26px; height: 26px; }
+    .delete-btn { padding: 8px 10px; font-size: 13px; }
+    button.btn { padding: 11px 17px; }
+    details.advanced summary { padding: 18px 22px; }
+  }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 0 1rem; }
+    .hero { padding: 3.5rem 1rem 2rem; }
+    .hero h1 { font-size: 27px; }
+    .hero-stat .num { font-size: 42px; }
+    .ribbon-wrap { height: 220px; }
+    .chart-wrap { height: 220px; }
+    .theme-toggle { top: 12px; right: 12px; padding: 6px 11px; font-size: 11px; }
+    .card, .chart-card { padding: 16px 15px; }
+    section { margin-bottom: 2rem; }
+  }
 </style>
 </head>
 <body>
@@ -249,7 +285,7 @@
     <div class="milestone">
       <div class="label ui"><span class="dot" style="background:var(--pine);"></span>Year 10 net worth</div>
       <div class="value" id="ms-total">—</div>
-      <div class="note ui">Projected, age 37</div>
+      <div class="note ui" id="ms-total-note">Projected</div>
     </div>
     <div class="milestone">
       <div class="label ui"><span class="dot" style="background:var(--slate);"></span>Where you are now</div>
@@ -259,39 +295,17 @@
   </div>
 
   <section>
-    <h2>Sync across devices<span class="h2-line"></span></h2>
-    <div class="card">
-      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
-        Connect a private GitHub Gist once per device. After that, changes here push automatically and pull on load — same data on your phone, iPad, and Mac.
-      </p>
-      <div class="checkin-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-        <div class="field">
-          <label for="gh-token">Personal access token (gist scope)</label>
-          <input type="password" id="gh-token" placeholder="ghp_...">
-        </div>
-        <div class="field">
-          <label for="gh-gist">Gist ID</label>
-          <input type="text" id="gh-gist" placeholder="e.g. a1b2c3d4...">
-        </div>
-      </div>
-      <div class="checkin-actions" style="margin-top:12px;">
-        <button class="btn primary" id="gh-connect">Connect &amp; sync now</button>
-        <button class="btn" id="gh-forget">Forget this device</button>
-        <span id="sync-status" class="ui" style="font-size:12.5px; color:var(--ink-faint);">Not connected</span>
-      </div>
-    </div>
-  </section>
-
-  <section>
     <h2>Salary changes<span class="h2-line"></span></h2>
     <div class="card">
       <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
         Leave a year blank to keep the 3%/yr projection. Fill in a year once you know the real number — every later year grows from that actual figure instead.
       </p>
-      <table class="plan-table" id="salary-table">
-        <thead><tr><th>Year</th><th>Age</th><th>Nick — projected</th><th>Nick — actual</th><th>Lauren — projected</th><th>Lauren — actual</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="plan-table" id="salary-table">
+          <thead><tr><th>Year</th><th>Age</th><th>Nick — projected</th><th>Nick — actual</th><th>Lauren — projected</th><th>Lauren — actual</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -416,10 +430,12 @@
   <section>
     <h2>Year by year<span class="h2-line"></span></h2>
     <div class="chart-card">
-      <table class="plan-table" id="plan-table">
-        <thead><tr><th>Year</th><th>Age</th><th>Gross</th><th>Expenses</th><th>Debt pmt</th><th>Loan bal</th><th>Net worth</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div class="table-scroll">
+        <table class="plan-table" id="plan-table">
+          <thead><tr><th>Year</th><th>Age</th><th>Gross</th><th>Expenses</th><th>Debt pmt</th><th>Loan bal</th><th>Net worth</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -447,7 +463,33 @@
     </div>
   </section>
 
-  <footer class="ui">Adjust any number above — the ribbon, milestones, table, and both charts recompute instantly. Assumptions save automatically to this artifact.</footer>
+  <section>
+    <details class="advanced" id="sync-panel">
+      <summary>Sync across devices <span class="chev ui">▸</span></summary>
+      <div class="adv-body">
+        <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:14px 0;">
+          Connect a private GitHub Gist once per device. After that, changes here push automatically and pull on load — same data on your phone, iPad, and Mac.
+        </p>
+        <div class="checkin-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+          <div class="field">
+            <label for="gh-token">Personal access token (gist scope)</label>
+            <input type="password" id="gh-token" placeholder="ghp_...">
+          </div>
+          <div class="field">
+            <label for="gh-gist">Gist ID</label>
+            <input type="text" id="gh-gist" placeholder="e.g. a1b2c3d4...">
+          </div>
+        </div>
+        <div class="checkin-actions" style="margin-top:12px;">
+          <button class="btn primary" id="gh-connect">Connect &amp; sync now</button>
+          <button class="btn" id="gh-forget">Forget this device</button>
+          <span id="sync-status" class="ui" style="font-size:12.5px; color:var(--ink-faint);">Not connected</span>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <footer class="ui">Adjust any number above — the ribbon, milestones, table, and both charts recompute instantly. Assumptions save automatically and sync across your devices.</footer>
 </div>
 
 <div class="save-indicator" id="save-indicator">Saved</div>
@@ -900,6 +942,7 @@
     }
 
     document.getElementById('ms-total').textContent = fmt(rows[PLAN_YEARS - 1].netWorth);
+    document.getElementById('ms-total-note').textContent = 'Projected, age ' + rows[PLAN_YEARS - 1].age;
 
     const nowNote = today < PLAN_START
       ? 'Plan starts ' + PLAN_START.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })

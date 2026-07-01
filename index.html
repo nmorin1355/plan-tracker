@@ -291,6 +291,9 @@
     .theme-toggle { top: 12px; right: 12px; padding: 6px 11px; font-size: 11px; }
     .card, .chart-card { padding: 16px 15px; }
     section { margin-bottom: 2rem; }
+    /* Stack form fields on phones — native iOS date inputs won't shrink in a
+       multi-column grid and overflow into their neighbor */
+    .checkin-grid { grid-template-columns: 1fr; }
   }
 </style>
 </head>

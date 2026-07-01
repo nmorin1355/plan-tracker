@@ -77,7 +77,21 @@ Interest is compounded **annually**, not monthly — there's a small (~1%) devia
 from the original PDF's year-4 loan balance because of this. Acceptable for a
 tracking tool; would need a monthly-step simulation to close that gap exactly.
 
-## UI structure (top to bottom in the file)
+## UI structure
+
+The page is split into **three tabs** via a sticky top nav (`.tabs`): **Dashboard**,
+**Log**, **Plan**. Tabs are not separate DOM trees — every top-level element carries a
+`data-tab="dashboard|log|plan"` attribute and CSS hides the non-active ones based on
+`body[data-active=...]` (set by `switchTab`). So DOM order is unchanged; adding a
+section just means tagging it. Charts live on Dashboard; `switchTab` calls
+`chart.resize()` when returning there in case they were rebuilt (e.g. theme toggle)
+while hidden. Assignment:
+- **Dashboard**: hero, milestones, Where we stand, Your move this year, both charts,
+  Cost of your debt, Year-by-year, Your road (timeline), Beyond year 10
+- **Log**: Your logs (form + history)
+- **Plan**: Quick adjust, Salary changes, All assumptions, Sync
+
+Within each tab, top to bottom in the file:
 
 - Theme toggle (dark/light, defaults to dark — this was a deliberate ask, don't flip
   the default back to light)

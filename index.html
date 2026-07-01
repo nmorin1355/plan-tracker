@@ -43,7 +43,7 @@
     --shadow: 0 1px 3px rgba(0,0,0,0.35), 0 8px 28px rgba(0,0,0,0.4);
   }
   .theme-toggle {
-    position: fixed; top: 16px; right: 16px; z-index: 10;
+    position: fixed; top: 16px; right: 16px; z-index: 30;
     font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 600;
     padding: 7px 13px; border-radius: 20px; border: 1px solid var(--line);
     background: var(--card); color: var(--ink-soft); cursor: pointer; box-shadow: var(--shadow);
@@ -60,6 +60,22 @@
   .ui { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; }
   .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
   .wrap { max-width: 980px; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; gap: 6px; justify-content: center; align-items: center;
+    background: var(--paper); border-bottom: 1px solid var(--line); padding: 10px 12px;
+  }
+  .tab {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 600;
+    padding: 8px 20px; border-radius: 20px; border: 1px solid transparent;
+    background: transparent; color: var(--ink-faint); cursor: pointer;
+  }
+  .tab.active { background: var(--card); color: var(--ink); border-color: var(--line); box-shadow: var(--shadow); }
+  body[data-active="dashboard"] [data-tab="log"], body[data-active="dashboard"] [data-tab="plan"],
+  body[data-active="log"] [data-tab="dashboard"], body[data-active="log"] [data-tab="plan"],
+  body[data-active="plan"] [data-tab="dashboard"], body[data-active="plan"] [data-tab="log"] { display: none; }
 
   /* ---------- Hero ---------- */
   .hero {
@@ -300,7 +316,13 @@
 <body>
 <button class="theme-toggle ui" id="theme-toggle">Light mode</button>
 
-<div class="hero">
+<nav class="tabs ui" id="tabs">
+  <button class="tab active" data-goto="dashboard">Dashboard</button>
+  <button class="tab" data-goto="log">Log</button>
+  <button class="tab" data-goto="plan">Plan</button>
+</nav>
+
+<div class="hero" data-tab="dashboard">
   <div class="eyebrow ui">Nick &amp; Lauren</div>
   <h1>The trajectory</h1>
   <div class="sub">Live plan tracker — adjust any assumption below and every date recalculates</div>
@@ -313,7 +335,7 @@
 
 <div class="wrap">
 
-  <div class="milestones">
+  <div class="milestones" data-tab="dashboard">
     <div class="milestone">
       <div class="label ui"><span class="dot" style="background:var(--rust);"></span>Debt-free</div>
       <div class="value" id="ms-debtfree">—</div>
@@ -336,7 +358,7 @@
     </div>
   </div>
 
-  <section id="standing-section">
+  <section id="standing-section" data-tab="dashboard">
     <h2>Where we stand today<span class="h2-line"></span></h2>
     <div class="card">
       <div class="empty-log" id="standing-empty">Log your balances below to see where you actually stand against the plan.</div>
@@ -361,7 +383,7 @@
     </div>
   </section>
 
-  <section id="monthly-section">
+  <section id="monthly-section" data-tab="dashboard">
     <h2>Your move this year<span class="h2-line"></span></h2>
     <div class="card">
       <div class="monthly-num" id="monthly-target">—</div>
@@ -370,7 +392,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="plan">
     <details class="advanced" id="salary-panel">
       <summary>Salary changes <span class="chev ui">▸</span></summary>
       <div class="adv-body">
@@ -387,7 +409,7 @@
     </details>
   </section>
 
-  <section>
+  <section data-tab="plan">
     <h2>Quick adjust<span class="h2-line"></span></h2>
     <div class="card">
       <div class="slider-grid">
@@ -419,7 +441,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="plan">
     <details class="advanced" id="advanced-panel">
       <summary>All assumptions <span class="chev ui">▸</span></summary>
       <div class="adv-body">
@@ -467,7 +489,7 @@
     </details>
   </section>
 
-  <section>
+  <section data-tab="log">
     <h2>Your logs<span class="h2-line"></span></h2>
     <div class="card">
       <p class="ui" style="font-size:12.5px; color:var(--ink-faint); margin:0 0 12px;">
@@ -490,7 +512,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="dashboard">
     <h2>Debt payoff — projected vs. actual<span class="h2-line"></span></h2>
     <div class="chart-card">
       <div class="legend">
@@ -501,7 +523,7 @@
     </div>
   </section>
 
-  <section id="cost-section">
+  <section id="cost-section" data-tab="dashboard">
     <h2>Cost of your debt<span class="h2-line"></span></h2>
     <div class="card">
       <div class="ui" style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);">Total interest over the payoff</div>
@@ -516,7 +538,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="dashboard">
     <h2>Saved buckets — projected vs. actual<span class="h2-line"></span></h2>
     <div class="chart-card">
       <div class="legend">
@@ -529,7 +551,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="dashboard">
     <h2>Year by year<span class="h2-line"></span></h2>
     <div class="chart-card">
       <div class="table-scroll">
@@ -541,14 +563,14 @@
     </div>
   </section>
 
-  <section id="timeline-section">
+  <section id="timeline-section" data-tab="dashboard">
     <h2>Your road<span class="h2-line"></span></h2>
     <div class="card">
       <ul class="timeline" id="timeline"></ul>
     </div>
   </section>
 
-  <section>
+  <section data-tab="dashboard">
     <h2>Beyond year 10<span class="h2-line"></span></h2>
     <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">
       Assumes retirement keeps growing at the same rate with contributions held flat at the year-10 pace — no more debt, house, or emergency fund competing for cash.
@@ -572,7 +594,7 @@
     </div>
   </section>
 
-  <section>
+  <section data-tab="plan">
     <details class="advanced" id="sync-panel">
       <summary>Sync across devices <span class="chev ui">▸</span></summary>
       <div class="adv-body">
@@ -598,7 +620,7 @@
     </details>
   </section>
 
-  <footer class="ui">Adjust any number above — the ribbon, milestones, table, and both charts recompute instantly. Assumptions save automatically and sync across your devices.</footer>
+  <footer class="ui" data-tab="dashboard">Everything recalculates instantly as you adjust the plan, and saves &amp; syncs automatically across your devices.</footer>
 </div>
 
 <div class="save-indicator" id="save-indicator">Saved</div>
@@ -1430,6 +1452,17 @@
     if (ribbonChart) { ribbonChart.destroy(); debtChart.destroy(); bucketChart.destroy(); ribbonChart = null; render(); }
   });
   initTheme();
+
+  // ---------- Tabs ----------
+  function switchTab(name) {
+    document.body.setAttribute('data-active', name);
+    document.querySelectorAll('#tabs .tab').forEach(t => t.classList.toggle('active', t.dataset.goto === name));
+    window.scrollTo(0, 0);
+    // charts live on the dashboard; if they were rebuilt while hidden they need a resize
+    if (name === 'dashboard' && ribbonChart) { ribbonChart.resize(); debtChart.resize(); bucketChart.resize(); }
+  }
+  document.querySelectorAll('#tabs .tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.goto)));
+  document.body.setAttribute('data-active', 'dashboard');
 
   // ---------- GitHub sync UI wiring ----------
   document.getElementById('gh-connect').addEventListener('click', async () => {

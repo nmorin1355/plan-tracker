@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nick & Lauren — Plan Trajectory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --ink: #1a231d;
+    --ink-soft: #4d5a4f;
+    --ink-faint: #8b9389;
+    --paper: #f1ede1;
+    --paper-deep: #e8e2d1;
+    --card: #fffdf7;
+    --line: #d9d2bd;
+    --pine: #1f4d3a;
+    --pine-bright: #2f7355;
+    --rust: #a8502c;
+    --rust-bright: #c96438;
+    --gold: #a97a24;
+    --gold-bright: #cc9938;
+    --slate: #35526a;
+    --shadow: 0 1px 3px rgba(26,35,29,0.06), 0 8px 24px rgba(26,35,29,0.05);
+  }
+  html[data-theme="dark"] {
+    --ink: #eae6d8;
+    --ink-soft: #b7c0b4;
+    --ink-faint: #7c8479;
+    --paper: #14170f;
+    --paper-deep: #0d0f0a;
+    --card: #1d211a;
+    --line: #333a2e;
+    --pine: #52b98a;
+    --pine-bright: #78d6ab;
+    --rust: #e2895e;
+    --rust-bright: #f2a67f;
+    --gold: #dfb256;
+    --gold-bright: #f0c97a;
+    --slate: #86aecb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.35), 0 8px 28px rgba(0,0,0,0.4);
+  }
+  .theme-toggle {
+    position: fixed; top: 16px; right: 16px; z-index: 10;
+    font-family: -apple-system, sans-serif; font-size: 12px; font-weight: 600;
+    padding: 7px 13px; border-radius: 20px; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink-soft); cursor: pointer; box-shadow: var(--shadow);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+    background: var(--paper);
+    background-image: radial-gradient(circle at 20% 0%, var(--paper-deep) 0%, var(--paper) 45%);
+    color: var(--ink);
+    padding: 0 0 5rem;
+  }
+  .ui { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* ---------- Hero ---------- */
+  .hero {
+    padding: 3rem 1.25rem 2.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2.5rem;
+  }
+  .hero .eyebrow {
+    font-family: -apple-system, sans-serif; font-size: 12px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 10px;
+  }
+  .hero h1 { font-size: 34px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .hero .sub { font-style: italic; color: var(--ink-soft); font-size: 15px; margin-bottom: 2rem; }
+
+  .hero-stat {
+    display: inline-flex; align-items: baseline; gap: 10px; margin-bottom: 0.5rem;
+  }
+  .hero-stat .num {
+    font-size: 56px; font-weight: 600; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-stat .num.negative { color: var(--rust); }
+  .hero-stat .num.positive { color: var(--pine); }
+  .hero-note { font-family: -apple-system, sans-serif; font-size: 13px; color: var(--ink-faint); margin-bottom: 1.75rem; }
+
+  .ribbon-wrap { position: relative; width: 100%; height: 260px; margin: 0 auto; max-width: 900px; }
+
+  /* ---------- Milestone row ---------- */
+  .milestones {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px; margin-bottom: 2.5rem;
+  }
+  .milestone {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; box-shadow: var(--shadow); transition: transform 0.15s ease;
+  }
+  .milestone:hover { transform: translateY(-2px); }
+  .milestone .label {
+    font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .milestone .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .milestone .value { font-size: 24px; font-weight: 600; margin-bottom: 3px; font-variant-numeric: tabular-nums; }
+  .milestone .note { font-family: -apple-system, sans-serif; font-size: 12.5px; color: var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section { margin-bottom: 2.5rem; }
+  h2 {
+    font-size: 13px; font-family: -apple-system, sans-serif; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft);
+    margin: 0 0 14px; display: flex; align-items: center; justify-content: space-between;
+  }
+  h2 .h2-line { flex: 1; height: 1px; background: var(--line); margin-left: 12px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; box-shadow: var(--shadow); }
+
+  /* ---------- Quick adjust sliders ---------- */
+  .slider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px 28px; }
+  .slider-field .ui-label {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: -apple-system, sans-serif; font-size: 13px; color: var(--ink-soft); margin-bottom: 8px;
+  }
+  .slider-field .ui-label .live-val { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    -webkit-appearance: none; width: 100%; height: 4px; border-radius: 2px;
+    background: var(--line); outline: none; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--pine); cursor: pointer; border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--pine);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: var(--pine);
+    cursor: pointer; border: 3px solid var(--card); box-shadow: 0 0 0 1px var(--pine);
+  }
+
+  /* ---------- Advanced assumptions ---------- */
+  details.advanced { background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
+  details.advanced summary {
+    cursor: pointer; padding: 16px 22px; font-family: -apple-system, sans-serif;
+    font-size: 13.5px; font-weight: 600; color: var(--ink-soft); list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  details.advanced summary::-webkit-details-marker { display: none; }
+  details.advanced summary .chev { transition: transform 0.15s ease; font-size: 11px; color: var(--ink-faint); }
+  details.advanced[open] summary .chev { transform: rotate(90deg); }
+  .adv-body { padding: 4px 22px 22px; border-top: 1px solid var(--line); }
+  .adv-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px 20px; margin-top: 16px; }
+  .adv-group-title {
+    font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--gold); margin: 20px 0 4px; font-weight: 600;
+  }
+  .adv-field label { display: block; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .adv-field input {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
+    font-family: -apple-system, sans-serif; font-size: 13.5px; background: var(--card); color: var(--ink);
+  }
+  .adv-field input:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
+  .adv-field input::placeholder, .field input::placeholder { color: var(--ink-faint); }
+  .reset-row { display: flex; gap: 10px; margin-top: 18px; }
+  button.btn {
+    font-family: -apple-system, sans-serif; font-size: 13px; font-weight: 600;
+    padding: 8px 15px; border-radius: 7px; cursor: pointer; border: 1px solid var(--line);
+    background: var(--card); color: var(--ink-soft);
+  }
+  button.btn.primary { background: var(--pine); color: #fdfcf6; border-color: var(--pine); }
+  button.btn:hover { filter: brightness(0.97); }
+
+  /* ---------- Chart cards ---------- */
+  .chart-card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; box-shadow: var(--shadow); }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-family: -apple-system, sans-serif; font-size: 12.5px; color: var(--ink-soft); }
+  .legend span { display: flex; align-items: center; gap: 5px; }
+  .lg-dash { width: 14px; height: 2px; display: inline-block; }
+  .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  /* ---------- Check-ins ---------- */
+  .checkin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .field label { display: block; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
+  .field input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+    font-family: -apple-system, sans-serif; font-size: 14px; background: var(--card); color: var(--ink);
+  }
+  .field input:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
+  .checkin-actions { display: flex; gap: 10px; align-items: center; font-family: -apple-system, sans-serif; }
+  #checkin-status { font-size: 12.5px; color: var(--pine); }
+  .checkin-log { font-family: -apple-system, sans-serif; font-size: 13px; margin-top: 14px; }
+  .checkin-log table { width: 100%; border-collapse: collapse; }
+  .checkin-log th, .checkin-log td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); }
+  .checkin-log th:first-child, .checkin-log td:first-child { text-align: left; }
+  .checkin-log th { color: var(--ink-faint); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+  .delete-btn { background: none; border: none; color: var(--rust); cursor: pointer; font-size: 12px; font-family: -apple-system, sans-serif; }
+  .empty-log { color: var(--ink-faint); font-style: italic; padding: 8px 0; }
+
+  /* ---------- Table ---------- */
+  table.plan-table { width: 100%; border-collapse: collapse; font-family: -apple-system, sans-serif; font-size: 13px; }
+  table.plan-table th, table.plan-table td { text-align: right; padding: 8px; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+  table.plan-table th:first-child, table.plan-table td:first-child { text-align: left; }
+  table.plan-table th { color: var(--ink-faint); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  table.plan-table tr.current-row { background: #e6ede8; }
+  table.plan-table tr.current-row td:first-child { font-weight: 700; color: var(--pine); }
+  .salary-input {
+    width: 100px; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px;
+    font-family: -apple-system, sans-serif; font-size: 12.5px; background: var(--paper); color: var(--ink);
+    text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .salary-input:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
+  .salary-input.overridden { border-color: var(--pine); background: color-mix(in srgb, var(--pine) 10%, var(--paper)); }
+
+  .save-indicator {
+    position: fixed; bottom: 18px; right: 18px; background: var(--pine); color: #fdfcf6;
+    font-family: -apple-system, sans-serif; font-size: 12px; padding: 8px 14px; border-radius: 20px;
+    box-shadow: var(--shadow); opacity: 0; transform: translateY(8px); transition: all 0.25s ease; pointer-events: none;
+  }
+  .save-indicator.show { opacity: 1; transform: translateY(0); }
+
+  footer { text-align: center; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-faint); margin-top: 2.5rem; }
+</style>
+</head>
+<body>
+<button class="theme-toggle ui" id="theme-toggle">Light mode</button>
+
+<div class="hero">
+  <div class="eyebrow ui">Nick &amp; Lauren</div>
+  <h1>The trajectory</h1>
+  <div class="sub">Live plan tracker — adjust any assumption below and every date recalculates</div>
+  <div class="hero-stat">
+    <span class="num" id="hero-networth">$0</span>
+  </div>
+  <div class="hero-note ui" id="hero-note">projected net worth today</div>
+  <div class="hero-note ui" id="pace-indicator" style="margin-bottom:1.75rem;"></div>
+  <div class="ribbon-wrap"><canvas id="ribbonChart" role="img" aria-label="Ribbon chart showing projected net worth crossing from debt into savings over ten years"></canvas></div>
+</div>
+
+<div class="wrap">
+
+  <div class="milestones">
+    <div class="milestone">
+      <div class="label ui"><span class="dot" style="background:var(--rust);"></span>Debt-free</div>
+      <div class="value" id="ms-debtfree">—</div>
+      <div class="note ui" id="ms-debtfree-note">—</div>
+    </div>
+    <div class="milestone">
+      <div class="label ui"><span class="dot" style="background:var(--gold);"></span>House fund target</div>
+      <div class="value" id="ms-house">—</div>
+      <div class="note ui" id="ms-house-note">—</div>
+    </div>
+    <div class="milestone">
+      <div class="label ui"><span class="dot" style="background:var(--pine);"></span>Year 10 net worth</div>
+      <div class="value" id="ms-total">—</div>
+      <div class="note ui">Projected, age 37</div>
+    </div>
+    <div class="milestone">
+      <div class="label ui"><span class="dot" style="background:var(--slate);"></span>Where you are now</div>
+      <div class="value" id="ms-now">—</div>
+      <div class="note ui" id="ms-now-note">—</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Sync across devices<span class="h2-line"></span></h2>
+    <div class="card">
+      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
+        Connect a private GitHub Gist once per device. After that, changes here push automatically and pull on load — same data on your phone, iPad, and Mac.
+      </p>
+      <div class="checkin-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="field">
+          <label for="gh-token">Personal access token (gist scope)</label>
+          <input type="password" id="gh-token" placeholder="ghp_...">
+        </div>
+        <div class="field">
+          <label for="gh-gist">Gist ID</label>
+          <input type="text" id="gh-gist" placeholder="e.g. a1b2c3d4...">
+        </div>
+      </div>
+      <div class="checkin-actions" style="margin-top:12px;">
+        <button class="btn primary" id="gh-connect">Connect &amp; sync now</button>
+        <button class="btn" id="gh-forget">Forget this device</button>
+        <span id="sync-status" class="ui" style="font-size:12.5px; color:var(--ink-faint);">Not connected</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Salary changes<span class="h2-line"></span></h2>
+    <div class="card">
+      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
+        Leave a year blank to keep the 3%/yr projection. Fill in a year once you know the real number — every later year grows from that actual figure instead.
+      </p>
+      <table class="plan-table" id="salary-table">
+        <thead><tr><th>Year</th><th>Age</th><th>Nick — projected</th><th>Nick — actual</th><th>Lauren — projected</th><th>Lauren — actual</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quick adjust<span class="h2-line"></span></h2>
+    <div class="card">
+      <div class="slider-grid">
+        <div class="slider-field">
+          <div class="ui-label"><span>Childcare, $/mo</span><span class="live-val" id="val-childcare">$2,000</span></div>
+          <input type="range" id="in-childcare" min="0" max="3500" step="100" value="2000">
+        </div>
+        <div class="slider-field">
+          <div class="ui-label"><span>Childcare starts at age</span><span class="live-val" id="val-childcareAge">32</span></div>
+          <input type="range" id="in-childcareAge" min="27" max="37" step="1" value="32">
+        </div>
+        <div class="slider-field">
+          <div class="ui-label"><span>Flat tax rate</span><span class="live-val" id="val-tax">30%</span></div>
+          <input type="range" id="in-tax" min="15" max="45" step="1" value="30">
+        </div>
+        <div class="slider-field">
+          <div class="ui-label"><span>One-time windfall, $</span><span class="live-val" id="val-windfall">$0</span></div>
+          <input type="range" id="in-windfall" min="0" max="50000" step="500" value="0">
+        </div>
+        <div class="slider-field">
+          <div class="ui-label"><span>Windfall applies in year</span><span class="live-val" id="val-windfallYear">1</span></div>
+          <input type="range" id="in-windfallYear" min="1" max="10" step="1" value="1">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <details class="advanced" id="advanced-panel">
+      <summary>All assumptions <span class="chev ui">▸</span></summary>
+      <div class="adv-body">
+        <div class="adv-group-title">Income</div>
+        <div class="adv-grid">
+          <div class="adv-field"><label>Nick's starting income ($/yr)</label><input type="number" id="a-nickStart" value="103000"></div>
+          <div class="adv-field"><label>Income growth rate (%/yr)</label><input type="number" id="a-growth" value="3" step="0.1"></div>
+          <div class="adv-field"><label>Lauren residency income, year 1 ($)</label><input type="number" id="a-laurenY1" value="65000"></div>
+          <div class="adv-field"><label>Lauren residency income, year 3 ($)</label><input type="number" id="a-laurenY3" value="69000"></div>
+          <div class="adv-field"><label>Lauren attending income, year 4 ($)</label><input type="number" id="a-laurenAttending" value="300000"></div>
+        </div>
+        <div class="adv-group-title">Expenses</div>
+        <div class="adv-grid">
+          <div class="adv-field"><label>Living, residency ($/mo)</label><input type="number" id="a-livingResidency" value="8000"></div>
+          <div class="adv-field"><label>Living, post-residency ($/mo)</label><input type="number" id="a-livingPost" value="10000"></div>
+          <div class="adv-field"><label>Lifestyle spend, phase 1 ($/mo)</label><input type="number" id="a-lifestyle1" value="1000"></div>
+          <div class="adv-field"><label>Lifestyle spend, phase 2 ($/mo)</label><input type="number" id="a-lifestyle2" value="2000"></div>
+        </div>
+        <div class="adv-group-title">Debt</div>
+        <div class="adv-grid">
+          <div class="adv-field"><label>Nick's loan balance today ($)</label><input type="number" id="a-nickLoanPrincipal" value="111000"></div>
+          <div class="adv-field"><label>Nick's loan rate (%)</label><input type="number" id="a-nickLoanRate" value="7" step="0.1"></div>
+          <div class="adv-field"><label>Lauren's loan balance today ($)</label><input type="number" id="a-laurenLoanPrincipal" value="453000"></div>
+          <div class="adv-field"><label>Lauren's loan rate (%)</label><input type="number" id="a-laurenLoanRate" value="7" step="0.1"></div>
+        </div>
+        <div class="adv-group-title">Savings &amp; growth</div>
+        <div class="adv-grid">
+          <div class="adv-field"><label>HYSA rate, emergency/house (%)</label><input type="number" id="a-hysaRate" value="3" step="0.1"></div>
+          <div class="adv-field"><label>Retirement growth rate (%)</label><input type="number" id="a-retRate" value="7" step="0.1"></div>
+          <div class="adv-field"><label>401(k) deferral rate, Lauren (%)</label><input type="number" id="a-deferralRate" value="3" step="0.1"></div>
+          <div class="adv-field"><label>Employer match rate (%)</label><input type="number" id="a-matchRate" value="3" step="0.1"></div>
+        </div>
+        <div class="adv-group-title">Targets</div>
+        <div class="adv-grid">
+          <div class="adv-field"><label>Emergency fund target ($)</label><input type="number" id="a-emergencyTarget" value="60000"></div>
+          <div class="adv-field"><label>House fund target ($)</label><input type="number" id="a-houseTarget" value="160000"></div>
+          <div class="adv-field"><label>Desired retirement spending ($/yr)</label><input type="number" id="a-fiSpend" value="150000"></div>
+        </div>
+        <div class="reset-row">
+          <button class="btn primary" id="btn-save-assumptions">Save assumptions</button>
+          <button class="btn" id="btn-reset">Reset to original plan</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section>
+    <h2>Log a check-in<span class="h2-line"></span></h2>
+    <div class="card">
+      <div class="checkin-grid">
+        <div class="field"><label for="ci-date">Date</label><input type="date" id="ci-date"></div>
+        <div class="field"><label for="ci-loan">Loan balance ($)</label><input type="number" id="ci-loan" placeholder="e.g. 540000"></div>
+        <div class="field"><label for="ci-emergency">Emergency fund ($)</label><input type="number" id="ci-emergency" placeholder="0"></div>
+        <div class="field"><label for="ci-house">House fund ($)</label><input type="number" id="ci-house" placeholder="0"></div>
+        <div class="field"><label for="ci-retirement">Retirement ($)</label><input type="number" id="ci-retirement" placeholder="0"></div>
+      </div>
+      <div class="checkin-actions">
+        <button class="btn primary" id="save-checkin">Save check-in</button>
+        <button class="btn" id="clear-form">Clear</button>
+        <span id="checkin-status"></span>
+      </div>
+      <div class="checkin-log" id="checkin-log"><div class="empty-log">Loading past check-ins…</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Debt payoff — projected vs. actual<span class="h2-line"></span></h2>
+    <div class="chart-card">
+      <div class="legend">
+        <span><span class="lg-dash" style="background:var(--rust);"></span> Projected loan balance</span>
+        <span><span class="lg-dot" style="background:var(--ink);"></span> Your check-ins</span>
+      </div>
+      <div class="chart-wrap"><canvas id="debtChart" role="img" aria-label="Line chart of projected loan balance versus your logged check-ins"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Saved buckets — projected vs. actual<span class="h2-line"></span></h2>
+    <div class="chart-card">
+      <div class="legend">
+        <span><span class="lg-dash" style="background:var(--gold);"></span> Emergency (proj.)</span>
+        <span><span class="lg-dash" style="background:var(--slate);"></span> House (proj.)</span>
+        <span><span class="lg-dash" style="background:var(--pine);"></span> Retirement (proj.)</span>
+        <span><span class="lg-dot" style="background:var(--ink);"></span> Your check-ins</span>
+      </div>
+      <div class="chart-wrap"><canvas id="bucketChart" role="img" aria-label="Chart comparing projected savings bucket balances against your logged check-ins"></canvas></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Year by year<span class="h2-line"></span></h2>
+    <div class="chart-card">
+      <table class="plan-table" id="plan-table">
+        <thead><tr><th>Year</th><th>Age</th><th>Gross</th><th>Expenses</th><th>Debt pmt</th><th>Loan bal</th><th>Net worth</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Beyond year 10<span class="h2-line"></span></h2>
+    <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">
+      Assumes retirement keeps growing at the same rate with contributions held flat at the year-10 pace — no more debt, house, or emergency fund competing for cash.
+    </p>
+    <div class="milestones">
+      <div class="milestone">
+        <div class="label ui"><span class="dot" style="background:var(--slate);"></span>Retirement at 60</div>
+        <div class="value" id="by10-60">—</div>
+        <div class="note ui">Projected</div>
+      </div>
+      <div class="milestone">
+        <div class="label ui"><span class="dot" style="background:var(--slate);"></span>Retirement at 65</div>
+        <div class="value" id="by10-65">—</div>
+        <div class="note ui">Projected</div>
+      </div>
+      <div class="milestone">
+        <div class="label ui"><span class="dot" style="background:var(--gold);"></span>Financial independence</div>
+        <div class="value" id="by10-fi">—</div>
+        <div class="note ui" id="by10-fi-note">—</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="ui">Adjust any number above — the ribbon, milestones, table, and both charts recompute instantly. Assumptions save automatically to this artifact.</footer>
+</div>
+
+<div class="save-indicator" id="save-indicator">Saved</div>
+
+<script>
+(function() {
+  const PLAN_START = new Date(2026, 6, 1);
+  const START_AGE = 27;
+  const PLAN_YEARS = 10;
+  const ASSUMPTIONS_KEY = 'plan-assumptions-v1';
+  const CHECKINS_KEY = 'plan-checkins';
+
+  const DEFAULTS = {
+    nickStart: 103000, growth: 3, laurenY1: 65000, laurenY3: 69000, laurenAttending: 300000,
+    livingResidency: 8000, livingPost: 10000, lifestyle1: 1000, lifestyle2: 2000,
+    childcare: 2000, childcareAge: 32,
+    nickLoanPrincipal: 111000, nickLoanRate: 7, laurenLoanPrincipal: 453000, laurenLoanRate: 7,
+    hysaRate: 3, retRate: 7, deferralRate: 3, matchRate: 3,
+    emergencyTarget: 60000, houseTarget: 160000, tax: 30,
+    windfallAmount: 0, windfallYear: 1,
+    fiSpend: 150000,
+    nickOverrides: {}, laurenOverrides: {}
+  };
+
+  let assumptions = { ...DEFAULTS };
+
+  function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+  function fmtSigned(n) {
+    const r = Math.round(n);
+    return (r < 0 ? '-$' : '$') + Math.abs(r).toLocaleString();
+  }
+  function yearsSinceStart(date) { return (date - PLAN_START) / (1000 * 60 * 60 * 24 * 365.25); }
+
+  // ---------- Recompute engine ----------
+  function recompute(a) {
+    const nick = {}, lauren = {}, nickProj = {}, laurenProj = {};
+    for (let y = 1; y <= PLAN_YEARS; y++) {
+      // pure projection, ignoring overrides (for display comparison)
+      nickProj[y] = y === 1 ? a.nickStart : nickProj[y-1] * (1 + a.growth/100);
+      if (y <= 3) {
+        laurenProj[y] = a.laurenY1 + (a.laurenY3 - a.laurenY1) * (y - 1) / 2;
+      } else if (y === 4) {
+        laurenProj[y] = a.laurenAttending;
+      } else {
+        laurenProj[y] = laurenProj[y-1] * (1 + a.growth/100);
+      }
+
+      // actual, chaining from the last override (or projection if none)
+      const nickBase = y === 1 ? a.nickStart : nick[y-1] * (1 + a.growth/100);
+      nick[y] = (a.nickOverrides && a.nickOverrides[y] != null) ? a.nickOverrides[y] : nickBase;
+
+      let laurenBase;
+      if (y <= 3) laurenBase = a.laurenY1 + (a.laurenY3 - a.laurenY1) * (y - 1) / 2;
+      else if (y === 4) laurenBase = a.laurenAttending;
+      else laurenBase = lauren[y-1] * (1 + a.growth/100);
+      lauren[y] = (a.laurenOverrides && a.laurenOverrides[y] != null) ? a.laurenOverrides[y] : laurenBase;
+    }
+
+    let nickLoan = a.nickLoanPrincipal, laurenLoan = a.laurenLoanPrincipal;
+    let emergency = 0, house = 0, retirement = 0;
+    let houseHitYear = null, debtFreeYear = null;
+    let lastRetirementContribution = 0;
+    const rows = [];
+
+    for (let y = 1; y <= PLAN_YEARS; y++) {
+      const age = START_AGE + y;
+      const gross = nick[y] + lauren[y];
+      const tax = (a.tax/100) * gross;
+      const deferral = y >= 4 ? (a.deferralRate/100) * lauren[y] : 0;
+      const net = gross - tax - deferral;
+
+      const living = (y <= 3 ? a.livingResidency : a.livingPost) * 12;
+      const childcare = age >= a.childcareAge ? a.childcare * 12 : 0;
+      const houseHitBefore = houseHitYear !== null && houseHitYear < y;
+      const lifestyle = y < 4 ? 0 : (houseHitBefore ? a.lifestyle2 * 12 : a.lifestyle1 * 12);
+
+      const windfall = (a.windfallAmount > 0 && Number(a.windfallYear) === y) ? a.windfallAmount : 0;
+      const surplus = net - living - childcare - lifestyle + windfall;
+
+      // accrue interest on both tranches
+      if (nickLoan > 0) nickLoan *= (1 + a.nickLoanRate/100);
+      if (laurenLoan > 0) laurenLoan *= (1 + a.laurenLoanRate/100);
+
+      // avalanche: pay the higher-rate tranche first
+      let pool = Math.max(surplus, 0);
+      const tranches = [
+        { rate: a.nickLoanRate, get: () => nickLoan, set: v => nickLoan = v },
+        { rate: a.laurenLoanRate, get: () => laurenLoan, set: v => laurenLoan = v }
+      ].sort((x, y2) => y2.rate - x.rate);
+
+      let debtPmt = 0;
+      tranches.forEach(t => {
+        const bal = t.get();
+        if (bal > 0 && pool > 0) {
+          const pay = Math.min(pool, bal);
+          t.set(bal - pay);
+          pool -= pay;
+          debtPmt += pay;
+        }
+      });
+
+      const combinedLoanBal = Math.max(0, nickLoan) + Math.max(0, laurenLoan);
+      if (combinedLoanBal <= 0.01 && debtFreeYear === null) debtFreeYear = y;
+      let leftover = surplus < 0 ? 0 : pool;
+
+      let retirementCashflow = 0;
+      if (combinedLoanBal <= 0.01 && leftover > 0) {
+        const roomE = Math.max(0, a.emergencyTarget - emergency);
+        const toE = Math.min(leftover, roomE);
+        emergency += toE; leftover -= toE;
+
+        const roomH = Math.max(0, a.houseTarget - house);
+        const toH = Math.min(leftover, roomH);
+        house += toH; leftover -= toH;
+        if (house >= a.houseTarget && houseHitYear === null) houseHitYear = y;
+
+        retirementCashflow = leftover;
+      }
+
+      if (emergency > 0) emergency *= (1 + a.hysaRate/100);
+      if (house > 0) house *= (1 + a.hysaRate/100);
+      const newRetirementMoney = deferral * (1 + a.matchRate/a.deferralRate) + retirementCashflow;
+      retirement = retirement * (1 + a.retRate/100) + newRetirementMoney;
+      lastRetirementContribution = newRetirementMoney;
+
+      const totalSaved = emergency + house + retirement;
+      const netWorth = totalSaved - combinedLoanBal;
+
+      rows.push({ year: y, age, gross, net, living: living + childcare, lifestyle, debtPmt, loanBal: combinedLoanBal,
+                  emergency, house, retirement, totalSaved, netWorth });
+    }
+
+    return { rows, debtFreeYear, houseHitYear, nick, lauren, nickProj, laurenProj, lastRetirementContribution };
+  }
+
+  // ---------- Beyond year 10: extend retirement at flat contribution pace ----------
+  function extendRetirement(startBalance, flatContribution, retRatePct, toAge) {
+    let bal = startBalance;
+    for (let age = START_AGE + PLAN_YEARS + 1; age <= toAge; age++) {
+      bal = bal * (1 + retRatePct/100) + flatContribution;
+    }
+    return bal;
+  }
+  function findFIAge(startBalance, flatContribution, retRatePct, fiTarget) {
+    let bal = startBalance;
+    for (let age = START_AGE + PLAN_YEARS; age <= 100; age++) {
+      if (bal >= fiTarget) return age;
+      bal = bal * (1 + retRatePct/100) + flatContribution;
+    }
+    return null;
+  }
+
+  // ---------- Storage (localStorage is the fast local layer; Gist sync layers on top) ----------
+  function loadAssumptions() {
+    try {
+      const raw = localStorage.getItem(ASSUMPTIONS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function saveAssumptions() {
+    try {
+      localStorage.setItem(ASSUMPTIONS_KEY, JSON.stringify(assumptions));
+      flashSaved();
+    } catch (e) { console.error('Storage unavailable', e); }
+    queueSync();
+  }
+  function loadCheckins() {
+    try {
+      const raw = localStorage.getItem(CHECKINS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) { return []; }
+  }
+  function saveCheckins(list) {
+    try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(list)); queueSync(); return true; }
+    catch (e) { return false; }
+  }
+
+  let saveFlashTimer;
+  function flashSaved() {
+    const el = document.getElementById('save-indicator');
+    el.classList.add('show');
+    clearTimeout(saveFlashTimer);
+    saveFlashTimer = setTimeout(() => el.classList.remove('show'), 1600);
+  }
+
+  // ---------- GitHub Gist sync ----------
+  const GH_TOKEN_KEY = 'plan-gh-token';
+  const GH_GIST_KEY = 'plan-gh-gist';
+  const GIST_FILENAME = 'plan-data.json';
+
+  function getGhCreds() {
+    let token, gistId;
+    try { token = localStorage.getItem(GH_TOKEN_KEY); gistId = localStorage.getItem(GH_GIST_KEY); }
+    catch (e) { token = null; gistId = null; }
+    return { token, gistId };
+  }
+  function setSyncStatus(text, isError) {
+    const el = document.getElementById('sync-status');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--rust)' : 'var(--ink-faint)';
+  }
+
+  async function pullFromGist() {
+    const { token, gistId } = getGhCreds();
+    if (!token || !gistId) return false;
+    setSyncStatus('Syncing…');
+    try {
+      const res = await fetch('https://api.github.com/gists/' + gistId, {
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' }
+      });
+      if (!res.ok) { setSyncStatus('Sync failed — check token/gist ID', true); return false; }
+      const data = await res.json();
+      const file = data.files && data.files[GIST_FILENAME];
+      if (!file || !file.content) { setSyncStatus('Connected — gist is empty, will populate on next save'); return true; }
+      const remote = JSON.parse(file.content);
+      const localUpdatedAt = (() => { try { return JSON.parse(localStorage.getItem('plan-sync-meta') || '{}').updatedAt || 0; } catch(e) { return 0; } })();
+      if (!remote.updatedAt || remote.updatedAt >= localUpdatedAt) {
+        if (remote.assumptions) { assumptions = { ...DEFAULTS, ...remote.assumptions }; localStorage.setItem(ASSUMPTIONS_KEY, JSON.stringify(assumptions)); }
+        if (remote.checkins) { checkins = remote.checkins; localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); }
+        localStorage.setItem('plan-sync-meta', JSON.stringify({ updatedAt: remote.updatedAt || Date.now() }));
+        setSyncStatus('Synced — pulled latest from other devices');
+        return 'updated';
+      }
+      setSyncStatus('Synced — this device is newest');
+      return true;
+    } catch (e) {
+      setSyncStatus('Sync failed — network error', true);
+      return false;
+    }
+  }
+
+  let syncTimer;
+  function queueSync() {
+    const { token, gistId } = getGhCreds();
+    if (!token || !gistId) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(pushToGist, 1200);
+  }
+
+  async function pushToGist() {
+    const { token, gistId } = getGhCreds();
+    if (!token || !gistId) return;
+    setSyncStatus('Syncing…');
+    const updatedAt = Date.now();
+    const payload = { updatedAt, assumptions, checkins };
+    try {
+      const res = await fetch('https://api.github.com/gists/' + gistId, {
+        method: 'PATCH',
+        headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github+json' },
+        body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(payload, null, 2) } } })
+      });
+      if (!res.ok) { setSyncStatus('Sync failed — check token/gist ID', true); return; }
+      localStorage.setItem('plan-sync-meta', JSON.stringify({ updatedAt }));
+      setSyncStatus('Synced just now');
+    } catch (e) {
+      setSyncStatus('Sync failed — network error', true);
+    }
+  }
+
+  let checkins = [];
+
+
+
+  // ---------- Number count-up ----------
+  const liveNums = {};
+  function animateNumber(el, from, to, fmtFn, duration = 500) {
+    const start = performance.now();
+    function tick(now) {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      el.textContent = fmtFn(from + (to - from) * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // ---------- Charts ----------
+  const rust = '#a8502c', gold = '#a97a24', slate = '#35526a', pine = '#1f4d3a', ink = '#1a231d', grid = '#e2dcc9';
+  const rustDark = '#e2895e', goldDark = '#dfb256', slateDark = '#86aecb', pineDark = '#52b98a', inkDark = '#eae6d8', gridDark = '#333a2e';
+
+  function colors() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    return dark
+      ? { rust: rustDark, gold: goldDark, slate: slateDark, pine: pineDark, ink: inkDark, grid: gridDark }
+      : { rust, gold, slate, pine, ink, grid };
+  }
+
+  let ribbonChart, debtChart, bucketChart;
+
+  const crosshairPlugin = {
+    id: 'crosshair',
+    afterDraw(chart) {
+      const active = chart.getActiveElements();
+      if (!active || !active.length) return;
+      const { ctx, chartArea: { top, bottom } } = chart;
+      const x = active[0].element.x;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(x, top);
+      ctx.lineTo(x, bottom);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.strokeStyle = colors().ink + '55';
+      ctx.stroke();
+      ctx.restore();
+    }
+  };
+  Chart.register(crosshairPlugin);
+
+  function initCharts(result) {
+    const c = colors();
+    const netWorthPts = result.rows.map(r => ({ x: r.year, y: Math.round(r.netWorth) }));
+
+    ribbonChart = new Chart(document.getElementById('ribbonChart'), {
+      type: 'line',
+      data: {
+        datasets: [{
+          data: netWorthPts, borderColor: c.pine, borderWidth: 2.5, pointRadius: 0, pointHitRadius: 25, tension: 0.35,
+          segment: {
+            borderColor: ctx => (ctx.p0.parsed.y < 0 || ctx.p1.parsed.y < 0) ? c.rust : c.pine
+          },
+          fill: { target: { value: 0 }, above: 'rgba(31,77,58,0.14)', below: 'rgba(168,80,44,0.14)' }
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 600 },
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: cc => fmtSigned(cc.parsed.y) } } },
+        scales: {
+          x: { type: 'linear', grid: { display: false }, ticks: { color: c.ink, callback: v => 'Y' + v, font: { family: 'sans-serif', size: 11 } } },
+          y: { grid: { color: c.grid }, ticks: { color: c.ink, callback: v => (v < 0 ? '-$' : '$') + Math.abs(v/1000) + 'k', font: { size: 11 } } }
+        }
+      }
+    });
+
+    debtChart = new Chart(document.getElementById('debtChart'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label: 'Projected', data: result.rows.map(r => ({ x: r.year, y: r.loanBal })), showLine: true, borderColor: c.rust, backgroundColor: c.rust + '22', borderWidth: 2, pointRadius: 0, pointHitRadius: 20, fill: true, tension: 0.25 },
+        { label: 'Actual', data: [], showLine: false, backgroundColor: c.ink, pointRadius: 5, pointHoverRadius: 7 }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: cc => cc.dataset.label + ': ' + fmt(cc.parsed.y) } } },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Plan year', color: c.ink, font: { family: 'sans-serif', size: 12 } }, grid: { display: false }, ticks: { color: c.ink, stepSize: 1 } },
+          y: { grid: { color: c.grid }, ticks: { color: c.ink, callback: v => '$' + (v/1000) + 'k' } }
+        }
+      }
+    });
+
+    bucketChart = new Chart(document.getElementById('bucketChart'), {
+      type: 'scatter',
+      data: { datasets: [
+        { label: 'Emergency (proj.)', data: result.rows.map(r => ({ x: r.year, y: r.emergency })), showLine: true, borderColor: c.gold, borderWidth: 2, pointRadius: 0, pointHitRadius: 20, borderDash: [4,3], tension: 0.2 },
+        { label: 'House (proj.)', data: result.rows.map(r => ({ x: r.year, y: r.house })), showLine: true, borderColor: c.slate, borderWidth: 2, pointRadius: 0, pointHitRadius: 20, borderDash: [4,3], tension: 0.2 },
+        { label: 'Retirement (proj.)', data: result.rows.map(r => ({ x: r.year, y: r.retirement })), showLine: true, borderColor: c.pine, borderWidth: 2, pointRadius: 0, pointHitRadius: 20, borderDash: [4,3], tension: 0.2 },
+        { label: 'Emergency (actual)', data: [], showLine: false, backgroundColor: c.gold, pointRadius: 5, pointStyle: 'rectRot' },
+        { label: 'House (actual)', data: [], showLine: false, backgroundColor: c.slate, pointRadius: 5, pointStyle: 'rectRot' },
+        { label: 'Retirement (actual)', data: [], showLine: false, backgroundColor: c.pine, pointRadius: 5, pointStyle: 'rectRot' }
+      ]},
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+        interaction: { mode: 'index', intersect: false, axis: 'x' },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: cc => cc.dataset.label + ': ' + fmt(cc.parsed.y) } } },
+        scales: {
+          x: { type: 'linear', title: { display: true, text: 'Plan year', color: c.ink, font: { family: 'sans-serif', size: 12 } }, grid: { display: false }, ticks: { color: c.ink, stepSize: 1 } },
+          y: { grid: { color: c.grid }, ticks: { color: c.ink, callback: v => '$' + (v/1000) + 'k' } }
+        }
+      }
+    });
+  }
+
+  function updateCharts(result) {
+    const netWorthPts = result.rows.map(r => ({ x: r.year, y: Math.round(r.netWorth) }));
+    ribbonChart.data.datasets[0].data = netWorthPts;
+    ribbonChart.update();
+
+    debtChart.data.datasets[0].data = result.rows.map(r => ({ x: r.year, y: r.loanBal }));
+    debtChart.update();
+
+    bucketChart.data.datasets[0].data = result.rows.map(r => ({ x: r.year, y: r.emergency }));
+    bucketChart.data.datasets[1].data = result.rows.map(r => ({ x: r.year, y: r.house }));
+    bucketChart.data.datasets[2].data = result.rows.map(r => ({ x: r.year, y: r.retirement }));
+    bucketChart.update();
+  }
+
+  function checkinsAsPoints(field) {
+    return checkins.map(c => ({ x: yearsSinceStart(new Date(c.date)) + 1, y: c[field] })).sort((a,b) => a.x - b.x);
+  }
+  function updateCheckinOverlay() {
+    debtChart.data.datasets[1].data = checkinsAsPoints('loan');
+    debtChart.update();
+    bucketChart.data.datasets[3].data = checkinsAsPoints('emergency');
+    bucketChart.data.datasets[4].data = checkinsAsPoints('house');
+    bucketChart.data.datasets[5].data = checkinsAsPoints('retirement');
+    bucketChart.update();
+  }
+
+  // ---------- Render ----------
+  let prevHeroVal = 0;
+  function render() {
+    const result = recompute(assumptions);
+    const rows = result.rows;
+
+    // hero
+    const today = new Date();
+    const yrsIn = Math.max(0, yearsSinceStart(today));
+    const startingDebt = assumptions.nickLoanPrincipal + assumptions.laurenLoanPrincipal;
+    let heroVal;
+    if (yrsIn <= 0) {
+      heroVal = -startingDebt;
+    } else if (yrsIn >= PLAN_YEARS) {
+      heroVal = rows[PLAN_YEARS - 1].netWorth;
+    } else {
+      const y0 = Math.floor(yrsIn), y1 = Math.min(PLAN_YEARS, y0 + 1);
+      const r0 = y0 === 0 ? -startingDebt : rows[y0 - 1].netWorth;
+      const r1 = rows[y1 - 1].netWorth;
+      heroVal = r0 + (r1 - r0) * (yrsIn - y0);
+    }
+    const heroEl = document.getElementById('hero-networth');
+    heroEl.className = 'num ' + (heroVal < 0 ? 'negative' : 'positive');
+    animateNumber(heroEl, prevHeroVal, heroVal, fmtSigned, 550);
+    prevHeroVal = heroVal;
+    document.getElementById('hero-note').textContent = heroVal < 0
+      ? 'projected net worth today — still underwater on debt'
+      : 'projected net worth today — in the black';
+
+    // milestones
+    const dfEl = document.getElementById('ms-debtfree');
+    const dfNote = document.getElementById('ms-debtfree-note');
+    if (result.debtFreeYear) {
+      dfEl.textContent = 'Year ' + result.debtFreeYear;
+      dfNote.textContent = 'Age ' + (START_AGE + result.debtFreeYear);
+    } else {
+      dfEl.textContent = 'Beyond Y10';
+      dfNote.textContent = 'Not cleared in 10-year window';
+    }
+
+    const hsEl = document.getElementById('ms-house');
+    const hsNote = document.getElementById('ms-house-note');
+    if (result.houseHitYear) {
+      hsEl.textContent = 'Year ' + result.houseHitYear;
+      hsNote.textContent = 'Age ' + (START_AGE + result.houseHitYear);
+    } else {
+      hsEl.textContent = 'Beyond Y10';
+      hsNote.textContent = 'Not reached in 10-year window';
+    }
+
+    document.getElementById('ms-total').textContent = fmt(rows[PLAN_YEARS - 1].netWorth);
+
+    const nowNote = today < PLAN_START
+      ? 'Plan starts ' + PLAN_START.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      : 'Year ' + (Math.floor(yrsIn) + 1) + ' of 10';
+    document.getElementById('ms-now').textContent = today < PLAN_START ? '—' : ('Age ' + Math.round(START_AGE + 1 + yrsIn));
+    document.getElementById('ms-now-note').textContent = nowNote;
+
+    // table
+    const curYear = Math.min(PLAN_YEARS, Math.max(1, Math.floor(yrsIn) + 1));
+    const tbody = document.querySelector('#plan-table tbody');
+    tbody.innerHTML = '';
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      if (r.year === curYear) tr.className = 'current-row';
+      tr.innerHTML = `<td>Y${r.year}</td><td>${r.age}</td><td>${fmt(r.gross)}</td><td>${fmt(r.living + r.lifestyle)}</td><td>${fmt(r.debtPmt)}</td><td>${fmt(r.loanBal)}</td><td>${fmtSigned(r.netWorth)}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    if (!ribbonChart) { initCharts(result); } else { updateCharts(result); }
+    updateCheckinOverlay();
+    renderSalaryTable(result);
+    renderPace(result, startingDebt);
+    renderBeyondY10(result);
+  }
+
+  // ---------- Pace vs. plan ----------
+  function projectedNetWorthAt(yrs, rows, startingDebt) {
+    if (yrs <= 0) return -startingDebt;
+    if (yrs >= PLAN_YEARS) return rows[PLAN_YEARS - 1].netWorth;
+    const y0 = Math.floor(yrs), y1 = Math.min(PLAN_YEARS, y0 + 1);
+    const r0 = y0 === 0 ? -startingDebt : rows[y0 - 1].netWorth;
+    const r1 = rows[y1 - 1].netWorth;
+    return r0 + (r1 - r0) * (yrs - y0);
+  }
+  function renderPace(result, startingDebt) {
+    const el = document.getElementById('pace-indicator');
+    if (!checkins.length) { el.textContent = ''; return; }
+    const latest = [...checkins].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+    const yrs = yearsSinceStart(new Date(latest.date));
+    const actualNetWorth = (latest.emergency + latest.house + latest.retirement) - latest.loan;
+    const projectedAtThatPoint = projectedNetWorthAt(yrs, result.rows, startingDebt);
+    const delta = actualNetWorth - projectedAtThatPoint;
+    const ahead = delta >= 0;
+    el.innerHTML = `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'}; font-weight:600;">${fmtSigned(delta)} ${ahead ? 'ahead of' : 'behind'} plan</span> as of your ${latest.date} check-in`;
+  }
+
+  // ---------- Beyond year 10 ----------
+  function renderBeyondY10(result) {
+    const y10Retirement = result.rows[PLAN_YEARS - 1].retirement;
+    const contribution = result.lastRetirementContribution;
+    const retRate = assumptions.retRate;
+
+    const at60 = extendRetirement(y10Retirement, contribution, retRate, 60);
+    const at65 = extendRetirement(y10Retirement, contribution, retRate, 65);
+    const fiTarget = assumptions.fiSpend * 25;
+    const fiAge = findFIAge(y10Retirement, contribution, retRate, fiTarget);
+
+    document.getElementById('by10-60').textContent = fmt(at60);
+    document.getElementById('by10-65').textContent = fmt(at65);
+    document.getElementById('by10-fi').textContent = fiAge ? ('Age ' + fiAge) : 'Beyond 100';
+    document.getElementById('by10-fi-note').textContent = fmt(fiTarget) + ' target (25× ' + fmt(assumptions.fiSpend) + '/yr)';
+  }
+
+  function renderSalaryTable(result) {
+    const tbody = document.querySelector('#salary-table tbody');
+    tbody.innerHTML = '';
+    for (let y = 1; y <= PLAN_YEARS; y++) {
+      const tr = document.createElement('tr');
+      const nickOv = assumptions.nickOverrides[y];
+      const laurenOv = assumptions.laurenOverrides[y];
+      tr.innerHTML = `
+        <td>Y${y}</td>
+        <td>${START_AGE + y}</td>
+        <td>${fmt(result.nickProj[y])}</td>
+        <td><input type="number" class="salary-input ${nickOv != null ? 'overridden' : ''}" data-person="nick" data-year="${y}" placeholder="—" value="${nickOv != null ? Math.round(nickOv) : ''}"></td>
+        <td>${fmt(result.laurenProj[y])}</td>
+        <td><input type="number" class="salary-input ${laurenOv != null ? 'overridden' : ''}" data-person="lauren" data-year="${y}" placeholder="—" value="${laurenOv != null ? Math.round(laurenOv) : ''}"></td>
+      `;
+      tbody.appendChild(tr);
+    }
+    tbody.querySelectorAll('.salary-input').forEach(input => {
+      input.addEventListener('change', () => {
+        const person = input.dataset.person, year = input.dataset.year;
+        const key = person === 'nick' ? 'nickOverrides' : 'laurenOverrides';
+        const val = input.value.trim();
+        if (val === '') delete assumptions[key][year];
+        else assumptions[key][year] = parseFloat(val);
+        saveAssumptions();
+        render();
+      });
+    });
+  }
+
+  // ---------- Wire quick sliders ----------
+  function bindSlider(id, key, valId, fmtFn) {
+    const input = document.getElementById(id);
+    const label = document.getElementById(valId);
+    input.addEventListener('input', () => {
+      assumptions[key] = parseFloat(input.value);
+      label.textContent = fmtFn(input.value);
+      render();
+    });
+    input.addEventListener('change', () => saveAssumptions());
+  }
+  bindSlider('in-childcare', 'childcare', 'val-childcare', v => '$' + Number(v).toLocaleString());
+  bindSlider('in-childcareAge', 'childcareAge', 'val-childcareAge', v => v);
+  bindSlider('in-tax', 'tax', 'val-tax', v => v + '%');
+  bindSlider('in-windfall', 'windfallAmount', 'val-windfall', v => '$' + Number(v).toLocaleString());
+  bindSlider('in-windfallYear', 'windfallYear', 'val-windfallYear', v => v);
+
+  function syncQuickSliders() {
+    document.getElementById('in-childcare').value = assumptions.childcare;
+    document.getElementById('val-childcare').textContent = '$' + assumptions.childcare.toLocaleString();
+    document.getElementById('in-childcareAge').value = assumptions.childcareAge;
+    document.getElementById('val-childcareAge').textContent = assumptions.childcareAge;
+    document.getElementById('in-tax').value = assumptions.tax;
+    document.getElementById('val-tax').textContent = assumptions.tax + '%';
+    document.getElementById('in-windfall').value = assumptions.windfallAmount;
+    document.getElementById('val-windfall').textContent = '$' + assumptions.windfallAmount.toLocaleString();
+    document.getElementById('in-windfallYear').value = assumptions.windfallYear;
+    document.getElementById('val-windfallYear').textContent = assumptions.windfallYear;
+  }
+
+  // ---------- Wire advanced fields ----------
+  const advancedMap = {
+    'a-nickStart': 'nickStart', 'a-growth': 'growth', 'a-laurenY1': 'laurenY1', 'a-laurenY3': 'laurenY3',
+    'a-laurenAttending': 'laurenAttending', 'a-livingResidency': 'livingResidency', 'a-livingPost': 'livingPost',
+    'a-lifestyle1': 'lifestyle1', 'a-lifestyle2': 'lifestyle2',
+    'a-nickLoanPrincipal': 'nickLoanPrincipal', 'a-nickLoanRate': 'nickLoanRate',
+    'a-laurenLoanPrincipal': 'laurenLoanPrincipal', 'a-laurenLoanRate': 'laurenLoanRate',
+    'a-hysaRate': 'hysaRate', 'a-retRate': 'retRate', 'a-deferralRate': 'deferralRate', 'a-matchRate': 'matchRate',
+    'a-emergencyTarget': 'emergencyTarget', 'a-houseTarget': 'houseTarget', 'a-fiSpend': 'fiSpend'
+  };
+  function syncAdvancedFields() {
+    Object.entries(advancedMap).forEach(([id, key]) => { document.getElementById(id).value = assumptions[key]; });
+  }
+  Object.entries(advancedMap).forEach(([id, key]) => {
+    document.getElementById(id).addEventListener('input', () => {
+      assumptions[key] = parseFloat(document.getElementById(id).value) || 0;
+      render();
+    });
+  });
+
+  document.getElementById('btn-save-assumptions').addEventListener('click', saveAssumptions);
+  document.getElementById('btn-reset').addEventListener('click', () => {
+    assumptions = { ...DEFAULTS };
+    syncQuickSliders();
+    syncAdvancedFields();
+    render();
+    saveAssumptions();
+  });
+
+  // ---------- Check-in form ----------
+  function renderLog() {
+    const el = document.getElementById('checkin-log');
+    if (!checkins.length) { el.innerHTML = '<div class="empty-log">No check-ins yet — log your first above.</div>'; return; }
+    const sorted = [...checkins].sort((a,b) => new Date(b.date) - new Date(a.date));
+    let html = '<table><thead><tr><th>Date</th><th>Loan</th><th>Emergency</th><th>House</th><th>Retirement</th><th></th></tr></thead><tbody>';
+    sorted.forEach(c => {
+      html += `<tr><td>${c.date}</td><td>${fmt(c.loan)}</td><td>${fmt(c.emergency)}</td><td>${fmt(c.house)}</td><td>${fmt(c.retirement)}</td><td><button class="delete-btn" data-id="${c.id}">remove</button></td></tr>`;
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    el.querySelectorAll('.delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        checkins = checkins.filter(c => c.id !== btn.dataset.id);
+        await saveCheckins(checkins);
+        renderLog();
+        updateCheckinOverlay();
+      });
+    });
+  }
+
+  document.getElementById('ci-date').valueAsDate = new Date();
+  document.getElementById('save-checkin').addEventListener('click', async () => {
+    const date = document.getElementById('ci-date').value;
+    const loan = parseFloat(document.getElementById('ci-loan').value) || 0;
+    const emergency = parseFloat(document.getElementById('ci-emergency').value) || 0;
+    const house = parseFloat(document.getElementById('ci-house').value) || 0;
+    const retirement = parseFloat(document.getElementById('ci-retirement').value) || 0;
+    const status = document.getElementById('checkin-status');
+    if (!date) { status.textContent = 'Pick a date first.'; status.style.color = '#a8502c'; return; }
+    checkins.push({ id: Date.now().toString(), date, loan, emergency, house, retirement });
+    const ok = await saveCheckins(checkins);
+    status.style.color = ok ? '#1f4d3a' : '#a8502c';
+    status.textContent = ok ? 'Saved.' : 'Save failed — try again.';
+    renderLog();
+    updateCheckinOverlay();
+    setTimeout(() => { status.textContent = ''; }, 2200);
+  });
+  document.getElementById('clear-form').addEventListener('click', () => {
+    ['ci-loan','ci-emergency','ci-house','ci-retirement'].forEach(id => document.getElementById(id).value = '');
+  });
+
+  // ---------- Theme ----------
+  const THEME_KEY = 'plan-theme';
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? 'Light mode' : 'Dark mode';
+  }
+  function initTheme() {
+    let theme;
+    try { theme = localStorage.getItem(THEME_KEY); } catch (e) { theme = null; }
+    applyTheme(theme || 'dark');
+  }
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+    if (ribbonChart) { ribbonChart.destroy(); debtChart.destroy(); bucketChart.destroy(); ribbonChart = null; render(); }
+  });
+  initTheme();
+
+  // ---------- GitHub sync UI wiring ----------
+  document.getElementById('gh-connect').addEventListener('click', async () => {
+    const token = document.getElementById('gh-token').value.trim();
+    const gistId = document.getElementById('gh-gist').value.trim();
+    if (!token || !gistId) { setSyncStatus('Enter both a token and gist ID', true); return; }
+    try { localStorage.setItem(GH_TOKEN_KEY, token); localStorage.setItem(GH_GIST_KEY, gistId); } catch (e) {}
+    const result = await pullFromGist();
+    if (result === 'updated') {
+      syncQuickSliders();
+      syncAdvancedFields();
+      renderLog();
+      render();
+    } else if (result === true) {
+      await pushToGist();
+    }
+  });
+  document.getElementById('gh-forget').addEventListener('click', () => {
+    try { localStorage.removeItem(GH_TOKEN_KEY); localStorage.removeItem(GH_GIST_KEY); } catch (e) {}
+    document.getElementById('gh-token').value = '';
+    document.getElementById('gh-gist').value = '';
+    setSyncStatus('Not connected');
+  });
+
+  // ---------- Init ----------
+  (async () => {
+    const saved = loadAssumptions();
+    if (saved) assumptions = { ...DEFAULTS, ...saved };
+    checkins = loadCheckins();
+
+    const { token, gistId } = getGhCreds();
+    if (token && gistId) {
+      document.getElementById('gh-token').value = token;
+      document.getElementById('gh-gist').value = gistId;
+      const result = await pullFromGist();
+      if (result === 'updated') {
+        checkins = loadCheckins();
+        const raw = loadAssumptions();
+        if (raw) assumptions = { ...DEFAULTS, ...raw };
+      }
+    }
+
+    syncQuickSliders();
+    syncAdvancedFields();
+    renderLog();
+    render();
+  })();
+})();
+</script>
+</body>
+</html>

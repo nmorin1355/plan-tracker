@@ -224,6 +224,10 @@
   /* Wide tables scroll horizontally on their own instead of forcing the whole page sideways */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .checkin-log { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* Grid children default to min-width:auto and won't shrink below their content —
+     a native iOS date/number field then overflows and overlaps its neighbor. */
+  .checkin-grid > *, .slider-grid > *, .adv-grid > * { min-width: 0; }
+  .checkin-actions { flex-wrap: wrap; }
 
   /* Touch devices: inputs must be >=16px or iOS Safari zooms the page on focus */
   @media (pointer: coarse) {
@@ -295,9 +299,10 @@
   </div>
 
   <section>
-    <h2>Salary changes<span class="h2-line"></span></h2>
-    <div class="card">
-      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
+    <details class="advanced" id="salary-panel">
+      <summary>Salary changes <span class="chev ui">▸</span></summary>
+      <div class="adv-body">
+      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:14px 0;">
         Leave a year blank to keep the 3%/yr projection. Fill in a year once you know the real number — every later year grows from that actual figure instead.
       </p>
       <div class="table-scroll">
@@ -306,7 +311,8 @@
           <tbody></tbody>
         </table>
       </div>
-    </div>
+      </div>
+    </details>
   </section>
 
   <section>
@@ -314,8 +320,8 @@
     <div class="card">
       <div class="slider-grid">
         <div class="slider-field">
-          <div class="ui-label"><span>Childcare, $/mo</span><span class="live-val" id="val-childcare">$2,000</span></div>
-          <input type="range" id="in-childcare" min="0" max="3500" step="100" value="2000">
+          <div class="ui-label"><span>Childcare, $/mo</span><span class="live-val" id="val-childcare">$0</span></div>
+          <input type="range" id="in-childcare" min="0" max="3500" step="100" value="0">
         </div>
         <div class="slider-field">
           <div class="ui-label"><span>Childcare starts at age</span><span class="live-val" id="val-childcareAge">32</span></div>
@@ -385,7 +391,7 @@
   </section>
 
   <section>
-    <h2>Log a check-in<span class="h2-line"></span></h2>
+    <h2>Your logs<span class="h2-line"></span></h2>
     <div class="card">
       <div class="checkin-grid">
         <div class="field"><label for="ci-date">Date</label><input type="date" id="ci-date"></div>
@@ -395,11 +401,11 @@
         <div class="field"><label for="ci-retirement">Retirement ($)</label><input type="number" id="ci-retirement" placeholder="0"></div>
       </div>
       <div class="checkin-actions">
-        <button class="btn primary" id="save-checkin">Save check-in</button>
+        <button class="btn primary" id="save-checkin">Save log</button>
         <button class="btn" id="clear-form">Clear</button>
         <span id="checkin-status"></span>
       </div>
-      <div class="checkin-log" id="checkin-log"><div class="empty-log">Loading past check-ins…</div></div>
+      <div class="checkin-log" id="checkin-log"><div class="empty-log">Loading your logs…</div></div>
     </div>
   </section>
 
@@ -408,9 +414,9 @@
     <div class="chart-card">
       <div class="legend">
         <span><span class="lg-dash" style="background:var(--rust);"></span> Projected loan balance</span>
-        <span><span class="lg-dot" style="background:var(--ink);"></span> Your check-ins</span>
+        <span><span class="lg-dot" style="background:var(--ink);"></span> Your logs</span>
       </div>
-      <div class="chart-wrap"><canvas id="debtChart" role="img" aria-label="Line chart of projected loan balance versus your logged check-ins"></canvas></div>
+      <div class="chart-wrap"><canvas id="debtChart" role="img" aria-label="Line chart of projected loan balance versus your logs"></canvas></div>
     </div>
   </section>
 
@@ -421,9 +427,9 @@
         <span><span class="lg-dash" style="background:var(--gold);"></span> Emergency (proj.)</span>
         <span><span class="lg-dash" style="background:var(--slate);"></span> House (proj.)</span>
         <span><span class="lg-dash" style="background:var(--pine);"></span> Retirement (proj.)</span>
-        <span><span class="lg-dot" style="background:var(--ink);"></span> Your check-ins</span>
+        <span><span class="lg-dot" style="background:var(--ink);"></span> Your logs</span>
       </div>
-      <div class="chart-wrap"><canvas id="bucketChart" role="img" aria-label="Chart comparing projected savings bucket balances against your logged check-ins"></canvas></div>
+      <div class="chart-wrap"><canvas id="bucketChart" role="img" aria-label="Chart comparing projected savings bucket balances against your logs"></canvas></div>
     </div>
   </section>
 
@@ -505,7 +511,7 @@
   const DEFAULTS = {
     nickStart: 103000, growth: 3, laurenY1: 65000, laurenY3: 69000, laurenAttending: 300000,
     livingResidency: 8000, livingPost: 10000, lifestyle1: 1000, lifestyle2: 2000,
-    childcare: 2000, childcareAge: 32,
+    childcare: 0, childcareAge: 32,
     nickLoanPrincipal: 111000, nickLoanRate: 7, laurenLoanPrincipal: 453000, laurenLoanRate: 7,
     hysaRate: 3, retRate: 7, deferralRate: 3, matchRate: 3,
     emergencyTarget: 60000, houseTarget: 160000, tax: 30,
@@ -986,7 +992,7 @@
     const projectedAtThatPoint = projectedNetWorthAt(yrs, result.rows, startingDebt);
     const delta = actualNetWorth - projectedAtThatPoint;
     const ahead = delta >= 0;
-    el.innerHTML = `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'}; font-weight:600;">${fmtSigned(delta)} ${ahead ? 'ahead of' : 'behind'} plan</span> as of your ${latest.date} check-in`;
+    el.innerHTML = `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'}; font-weight:600;">${fmtSigned(delta)} ${ahead ? 'ahead of' : 'behind'} plan</span> as of your ${latest.date} log`;
   }
 
   // ---------- Beyond year 10 ----------
@@ -1098,7 +1104,7 @@
   // ---------- Check-in form ----------
   function renderLog() {
     const el = document.getElementById('checkin-log');
-    if (!checkins.length) { el.innerHTML = '<div class="empty-log">No check-ins yet — log your first above.</div>'; return; }
+    if (!checkins.length) { el.innerHTML = '<div class="empty-log">No logs yet — add your first above.</div>'; return; }
     const sorted = [...checkins].sort((a,b) => new Date(b.date) - new Date(a.date));
     let html = '<table><thead><tr><th>Date</th><th>Loan</th><th>Emergency</th><th>House</th><th>Retirement</th><th></th></tr></thead><tbody>';
     sorted.forEach(c => {

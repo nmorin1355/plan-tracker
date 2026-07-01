@@ -177,6 +177,23 @@
   .lg-dash { width: 14px; height: 2px; display: inline-block; }
   .lg-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
+  /* ---------- Where we stand ---------- */
+  .standing-verdict { font-family: -apple-system, sans-serif; font-size: 15px; font-weight: 600; margin-bottom: 18px; }
+  .standing-bars { display: flex; flex-direction: column; gap: 15px; }
+  .standing-bar .sb-head { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-soft); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+  .sb-track { height: 9px; border-radius: 5px; background: var(--line); overflow: hidden; }
+  .sb-fill { height: 100%; border-radius: 5px; width: 0; transition: width 0.5s ease; }
+  .standing-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Windfall block ---------- */
+  .windfall-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+  .windfall-title { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
+  .field select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+    font-family: -apple-system, sans-serif; font-size: 14px; background: var(--card); color: var(--ink);
+  }
+  .field select:focus { outline: 2px solid var(--pine); outline-offset: 1px; }
+
   /* ---------- Check-ins ---------- */
   .checkin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 12px; }
   .field label { display: block; font-family: -apple-system, sans-serif; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; }
@@ -231,8 +248,8 @@
 
   /* Touch devices: inputs must be >=16px or iOS Safari zooms the page on focus */
   @media (pointer: coarse) {
-    .field input, .adv-field input, .salary-input,
-    input[type="number"], input[type="text"], input[type="password"], input[type="date"] {
+    .field input, .field select, .adv-field input, .salary-input,
+    input[type="number"], input[type="text"], input[type="password"], input[type="date"], select {
       font-size: 16px;
     }
     .salary-input { width: 108px; }
@@ -269,7 +286,6 @@
     <span class="num" id="hero-networth">$0</span>
   </div>
   <div class="hero-note ui" id="hero-note">projected net worth today</div>
-  <div class="hero-note ui" id="pace-indicator" style="margin-bottom:1.75rem;"></div>
   <div class="ribbon-wrap"><canvas id="ribbonChart" role="img" aria-label="Ribbon chart showing projected net worth crossing from debt into savings over ten years"></canvas></div>
 </div>
 
@@ -298,6 +314,31 @@
     </div>
   </div>
 
+  <section id="standing-section">
+    <h2>Where we stand today<span class="h2-line"></span></h2>
+    <div class="card">
+      <div class="empty-log" id="standing-empty">Log your balances below to see where you actually stand against the plan.</div>
+      <div id="standing-body" style="display:none;">
+        <div class="standing-verdict" id="standing-verdict"></div>
+        <div class="standing-bars">
+          <div class="standing-bar">
+            <div class="sb-head ui"><span>Debt paid down</span><span id="sb-debt-val"></span></div>
+            <div class="sb-track"><div class="sb-fill" id="sb-debt-fill" style="background:var(--rust);"></div></div>
+          </div>
+          <div class="standing-bar">
+            <div class="sb-head ui"><span>Emergency fund</span><span id="sb-emergency-val"></span></div>
+            <div class="sb-track"><div class="sb-fill" id="sb-emergency-fill" style="background:var(--gold);"></div></div>
+          </div>
+          <div class="standing-bar">
+            <div class="sb-head ui"><span>House fund</span><span id="sb-house-val"></span></div>
+            <div class="sb-track"><div class="sb-fill" id="sb-house-fill" style="background:var(--slate);"></div></div>
+          </div>
+        </div>
+        <div class="standing-foot ui" id="standing-countdown"></div>
+      </div>
+    </div>
+  </section>
+
   <section>
     <details class="advanced" id="salary-panel">
       <summary>Salary changes <span class="chev ui">▸</span></summary>
@@ -324,20 +365,24 @@
           <input type="range" id="in-childcare" min="0" max="3500" step="100" value="0">
         </div>
         <div class="slider-field">
-          <div class="ui-label"><span>Childcare starts at age</span><span class="live-val" id="val-childcareAge">32</span></div>
-          <input type="range" id="in-childcareAge" min="27" max="37" step="1" value="32">
-        </div>
-        <div class="slider-field">
           <div class="ui-label"><span>Flat tax rate</span><span class="live-val" id="val-tax">30%</span></div>
           <input type="range" id="in-tax" min="15" max="45" step="1" value="30">
         </div>
-        <div class="slider-field">
-          <div class="ui-label"><span>One-time windfall, $</span><span class="live-val" id="val-windfall">$0</span></div>
-          <input type="range" id="in-windfall" min="0" max="50000" step="500" value="0">
-        </div>
-        <div class="slider-field">
-          <div class="ui-label"><span>Windfall applies in year</span><span class="live-val" id="val-windfallYear">1</span></div>
-          <input type="range" id="in-windfallYear" min="1" max="10" step="1" value="1">
+      </div>
+      <div class="windfall-block">
+        <div class="windfall-title ui">One-time windfall</div>
+        <div class="checkin-grid">
+          <div class="field"><label for="wf-amount">Amount ($)</label><input type="number" id="wf-amount" placeholder="e.g. 15000"></div>
+          <div class="field"><label for="wf-year">Applies in year (1–10)</label><input type="number" id="wf-year" min="1" max="10" step="1" value="1"></div>
+          <div class="field"><label for="wf-target">Apply to</label>
+            <select id="wf-target">
+              <option value="debt">Extra debt payment</option>
+              <option value="emergency">Emergency fund</option>
+              <option value="house">House fund</option>
+              <option value="retirement">Retirement</option>
+            </select>
+          </div>
+          <div class="field"><label for="wf-label">For (optional note)</label><input type="text" id="wf-label" placeholder="e.g. signing bonus"></div>
         </div>
       </div>
     </div>
@@ -361,6 +406,7 @@
           <div class="adv-field"><label>Living, post-residency ($/mo)</label><input type="number" id="a-livingPost" value="10000"></div>
           <div class="adv-field"><label>Lifestyle spend, phase 1 ($/mo)</label><input type="number" id="a-lifestyle1" value="1000"></div>
           <div class="adv-field"><label>Lifestyle spend, phase 2 ($/mo)</label><input type="number" id="a-lifestyle2" value="2000"></div>
+          <div class="adv-field"><label>Childcare starts at age</label><input type="number" id="a-childcareAge" value="32"></div>
         </div>
         <div class="adv-group-title">Debt</div>
         <div class="adv-grid">
@@ -515,7 +561,7 @@
     nickLoanPrincipal: 111000, nickLoanRate: 7, laurenLoanPrincipal: 453000, laurenLoanRate: 7,
     hysaRate: 3, retRate: 7, deferralRate: 3, matchRate: 3,
     emergencyTarget: 60000, houseTarget: 160000, tax: 30,
-    windfallAmount: 0, windfallYear: 1,
+    windfallAmount: 0, windfallYear: 1, windfallTarget: 'debt', windfallLabel: '',
     fiSpend: 150000,
     nickOverrides: {}, laurenOverrides: {}
   };
@@ -573,14 +619,16 @@
       const lifestyle = y < 4 ? 0 : (houseHitBefore ? a.lifestyle2 * 12 : a.lifestyle1 * 12);
 
       const windfall = (a.windfallAmount > 0 && Number(a.windfallYear) === y) ? a.windfallAmount : 0;
-      const surplus = net - living - childcare - lifestyle + windfall;
+      const wTarget = a.windfallTarget || 'debt';
+      const surplus = net - living - childcare - lifestyle;
 
       // accrue interest on both tranches
       if (nickLoan > 0) nickLoan *= (1 + a.nickLoanRate/100);
       if (laurenLoan > 0) laurenLoan *= (1 + a.laurenLoanRate/100);
 
-      // avalanche: pay the higher-rate tranche first
-      let pool = Math.max(surplus, 0);
+      // avalanche: pay the higher-rate tranche first.
+      // A windfall routed to "debt" joins this year's paydown pool; other targets are applied to their bucket after the waterfall.
+      let pool = Math.max(surplus, 0) + (wTarget === 'debt' ? windfall : 0);
       const tranches = [
         { rate: a.nickLoanRate, get: () => nickLoan, set: v => nickLoan = v },
         { rate: a.laurenLoanRate, get: () => laurenLoan, set: v => laurenLoan = v }
@@ -599,7 +647,7 @@
 
       const combinedLoanBal = Math.max(0, nickLoan) + Math.max(0, laurenLoan);
       if (combinedLoanBal <= 0.01 && debtFreeYear === null) debtFreeYear = y;
-      let leftover = surplus < 0 ? 0 : pool;
+      let leftover = pool;  // whatever's left after debt (surplus and/or windfall-to-debt) can flow to savings
 
       let retirementCashflow = 0;
       if (combinedLoanBal <= 0.01 && leftover > 0) {
@@ -615,11 +663,18 @@
         retirementCashflow = leftover;
       }
 
+      // windfall routed straight into a savings bucket (bypasses the debt-first rule)
+      let windfallToRetirement = 0;
+      if (wTarget === 'emergency') emergency += windfall;
+      else if (wTarget === 'house') { house += windfall; if (house >= a.houseTarget && houseHitYear === null) houseHitYear = y; }
+      else if (wTarget === 'retirement') windfallToRetirement = windfall;
+
       if (emergency > 0) emergency *= (1 + a.hysaRate/100);
       if (house > 0) house *= (1 + a.hysaRate/100);
-      const newRetirementMoney = deferral * (1 + a.matchRate/a.deferralRate) + retirementCashflow;
+      const recurringRetirement = deferral * (1 + a.matchRate/a.deferralRate) + retirementCashflow;
+      const newRetirementMoney = recurringRetirement + windfallToRetirement;
       retirement = retirement * (1 + a.retRate/100) + newRetirementMoney;
-      lastRetirementContribution = newRetirementMoney;
+      lastRetirementContribution = recurringRetirement;  // one-time windfall excluded from the perpetual pace
 
       const totalSaved = emergency + house + retirement;
       const netWorth = totalSaved - combinedLoanBal;
@@ -970,8 +1025,54 @@
     if (!ribbonChart) { initCharts(result); } else { updateCharts(result); }
     updateCheckinOverlay();
     renderSalaryTable(result);
-    renderPace(result, startingDebt);
+    renderStanding(result, startingDebt);
     renderBeyondY10(result);
+  }
+
+  // ---------- Where we stand today ----------
+  function renderStanding(result, startingDebt) {
+    const empty = document.getElementById('standing-empty');
+    const body = document.getElementById('standing-body');
+    if (!checkins.length) { empty.style.display = ''; body.style.display = 'none'; return; }
+    empty.style.display = 'none'; body.style.display = '';
+
+    const latest = [...checkins].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+
+    const paid = Math.max(0, startingDebt - latest.loan);
+    const debtPct = startingDebt > 0 ? Math.min(100, paid / startingDebt * 100) : 100;
+    document.getElementById('sb-debt-fill').style.width = debtPct + '%';
+    document.getElementById('sb-debt-val').textContent = fmt(paid) + ' of ' + fmt(startingDebt) + ' (' + Math.round(debtPct) + '%)';
+
+    const eTarget = assumptions.emergencyTarget;
+    const ePct = eTarget > 0 ? Math.min(100, latest.emergency / eTarget * 100) : 0;
+    document.getElementById('sb-emergency-fill').style.width = ePct + '%';
+    document.getElementById('sb-emergency-val').textContent = fmt(latest.emergency) + ' of ' + fmt(eTarget);
+
+    const hTarget = assumptions.houseTarget;
+    const hPct = hTarget > 0 ? Math.min(100, latest.house / hTarget * 100) : 0;
+    document.getElementById('sb-house-fill').style.width = hPct + '%';
+    document.getElementById('sb-house-val').textContent = fmt(latest.house) + ' of ' + fmt(hTarget);
+
+    // verdict: actual net worth vs. where the plan said we'd be on the log date
+    const yrs = yearsSinceStart(new Date(latest.date));
+    const actualNetWorth = (latest.emergency + latest.house + latest.retirement) - latest.loan;
+    const delta = actualNetWorth - projectedNetWorthAt(yrs, result.rows, startingDebt);
+    const ahead = delta >= 0;
+    document.getElementById('standing-verdict').innerHTML =
+      `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'};">${ahead ? '▲' : '▼'} ${fmt(Math.abs(delta))} ${ahead ? 'ahead of' : 'behind'} plan</span>`
+      + `<span style="color:var(--ink-faint); font-weight:400;"> as of ${latest.date}</span>`;
+
+    const cd = document.getElementById('standing-countdown');
+    if (result.debtFreeYear) {
+      const dfDate = new Date(PLAN_START.getFullYear() + result.debtFreeYear, PLAN_START.getMonth(), 1);
+      const monthsOut = Math.round((dfDate - new Date()) / (1000 * 60 * 60 * 24 * 30.44));
+      const dfStr = dfDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      cd.textContent = monthsOut > 0
+        ? `On plan, debt-free in ~${(monthsOut / 12).toFixed(1)} years — around ${dfStr} (end of Year ${result.debtFreeYear}).`
+        : `Projected debt-free around ${dfStr}.`;
+    } else {
+      cd.textContent = 'Debt is not fully cleared within the 10-year plan window.';
+    }
   }
 
   // ---------- Pace vs. plan ----------
@@ -983,18 +1084,6 @@
     const r1 = rows[y1 - 1].netWorth;
     return r0 + (r1 - r0) * (yrs - y0);
   }
-  function renderPace(result, startingDebt) {
-    const el = document.getElementById('pace-indicator');
-    if (!checkins.length) { el.textContent = ''; return; }
-    const latest = [...checkins].sort((a,b) => new Date(b.date) - new Date(a.date))[0];
-    const yrs = yearsSinceStart(new Date(latest.date));
-    const actualNetWorth = (latest.emergency + latest.house + latest.retirement) - latest.loan;
-    const projectedAtThatPoint = projectedNetWorthAt(yrs, result.rows, startingDebt);
-    const delta = actualNetWorth - projectedAtThatPoint;
-    const ahead = delta >= 0;
-    el.innerHTML = `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'}; font-weight:600;">${fmtSigned(delta)} ${ahead ? 'ahead of' : 'behind'} plan</span> as of your ${latest.date} log`;
-  }
-
   // ---------- Beyond year 10 ----------
   function renderBeyondY10(result) {
     const y10Retirement = result.rows[PLAN_YEARS - 1].retirement;
@@ -1054,29 +1143,38 @@
     input.addEventListener('change', () => saveAssumptions());
   }
   bindSlider('in-childcare', 'childcare', 'val-childcare', v => '$' + Number(v).toLocaleString());
-  bindSlider('in-childcareAge', 'childcareAge', 'val-childcareAge', v => v);
   bindSlider('in-tax', 'tax', 'val-tax', v => v + '%');
-  bindSlider('in-windfall', 'windfallAmount', 'val-windfall', v => '$' + Number(v).toLocaleString());
-  bindSlider('in-windfallYear', 'windfallYear', 'val-windfallYear', v => v);
+
+  // Windfall — manual inputs (amount, year, which bucket it lands in, optional note)
+  function wireWindfall(id, key, isNum) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => {
+      assumptions[key] = isNum ? (parseFloat(el.value) || 0) : el.value;
+      render();
+    });
+    el.addEventListener('change', () => saveAssumptions());
+  }
+  wireWindfall('wf-amount', 'windfallAmount', true);
+  wireWindfall('wf-year', 'windfallYear', true);
+  wireWindfall('wf-target', 'windfallTarget', false);
+  wireWindfall('wf-label', 'windfallLabel', false);
 
   function syncQuickSliders() {
     document.getElementById('in-childcare').value = assumptions.childcare;
     document.getElementById('val-childcare').textContent = '$' + assumptions.childcare.toLocaleString();
-    document.getElementById('in-childcareAge').value = assumptions.childcareAge;
-    document.getElementById('val-childcareAge').textContent = assumptions.childcareAge;
     document.getElementById('in-tax').value = assumptions.tax;
     document.getElementById('val-tax').textContent = assumptions.tax + '%';
-    document.getElementById('in-windfall').value = assumptions.windfallAmount;
-    document.getElementById('val-windfall').textContent = '$' + assumptions.windfallAmount.toLocaleString();
-    document.getElementById('in-windfallYear').value = assumptions.windfallYear;
-    document.getElementById('val-windfallYear').textContent = assumptions.windfallYear;
+    document.getElementById('wf-amount').value = assumptions.windfallAmount || '';
+    document.getElementById('wf-year').value = assumptions.windfallYear;
+    document.getElementById('wf-target').value = assumptions.windfallTarget || 'debt';
+    document.getElementById('wf-label').value = assumptions.windfallLabel || '';
   }
 
   // ---------- Wire advanced fields ----------
   const advancedMap = {
     'a-nickStart': 'nickStart', 'a-growth': 'growth', 'a-laurenY1': 'laurenY1', 'a-laurenY3': 'laurenY3',
     'a-laurenAttending': 'laurenAttending', 'a-livingResidency': 'livingResidency', 'a-livingPost': 'livingPost',
-    'a-lifestyle1': 'lifestyle1', 'a-lifestyle2': 'lifestyle2',
+    'a-lifestyle1': 'lifestyle1', 'a-lifestyle2': 'lifestyle2', 'a-childcareAge': 'childcareAge',
     'a-nickLoanPrincipal': 'nickLoanPrincipal', 'a-nickLoanRate': 'nickLoanRate',
     'a-laurenLoanPrincipal': 'laurenLoanPrincipal', 'a-laurenLoanRate': 'laurenLoanRate',
     'a-hysaRate': 'hysaRate', 'a-retRate': 'retRate', 'a-deferralRate': 'deferralRate', 'a-matchRate': 'matchRate',

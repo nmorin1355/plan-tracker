@@ -42,8 +42,15 @@ Order of operations per plan-year:
    it's wrong now). Each tranche accrues its own interest rate annually. All
    available surplus pays down debt **avalanche-style** — whichever tranche has the
    higher interest rate gets paid first. A one-time "windfall" (bonus, tax refund,
-   etc.) can be injected into a specific plan-year and gets added to that year's
-   surplus before debt paydown.
+   etc.) can be injected into a specific plan-year and **routed to a chosen bucket**
+   (extra debt / emergency / house / retirement) via `windfallTarget`. "debt" joins
+   that year's paydown pool; the others are applied straight to the bucket after the
+   waterfall, bypassing the debt-first rule (so you can, e.g., fund retirement while
+   still in debt). The one-time amount is deliberately excluded from
+   `lastRetirementContribution` so it doesn't inflate the beyond-year-10 pace.
+   `recompute` also tallies `totalInterest` (sum of interest accrued across both
+   tranches) and accepts an optional `extraAnnual` (used by the "what moves the
+   needle" levers to re-run the model with more cash toward debt).
 6. **Savings waterfall**, only once *both* loan tranches hit zero: emergency fund
    (target $60K default) → house fund (target $160K default) → whatever's left goes
    to retirement as a cash-flow contribution. Emergency and house both grow at a
@@ -74,26 +81,39 @@ tracking tool; would need a monthly-step simulation to close that gap exactly.
 
 - Theme toggle (dark/light, defaults to dark — this was a deliberate ask, don't flip
   the default back to light)
-- Hero: animated net-worth number + ribbon chart + pace-vs-plan indicator (only
-  shows once a check-in exists)
+- Hero: animated net-worth number + ribbon chart
 - Milestone cards
-- **Sync across devices** — GitHub Gist token/ID fields (see below)
-- **Salary changes** table — per-year actual income override for Nick and Lauren
-- **Quick adjust** — 4-slider panel for the most commonly tweaked numbers
-  (childcare $, childcare start age, tax rate, one-time windfall + year)
-- **All assumptions** (collapsible `<details>`) — every other input, grouped by
-  Income / Expenses / Debt / Savings & growth / Targets
-- Check-in log (form + table)
-- Debt payoff chart, saved-buckets chart (both scatter/line combos with a crosshair
-  hover plugin — see below)
+- **Where we stand today** — reality-anchored panel driven by the latest logs:
+  debt-paydown + emergency + house progress bars, an ahead/behind verdict vs. the
+  plan, and a debt-free countdown. Uses `latestKnown(field)` (most recent log that
+  actually has that field) so a partial log doesn't reset anything to zero.
+- **Your move this year** — this year's surplus ÷ 12 as a "save ~$X/mo" number; the
+  bridge to the couple's separate daily-budgeting app.
+- **Salary changes** (collapsed `<details>`) — per-year actual income override
+- **Quick adjust** — 2 sliders (childcare $, tax rate) + a manual one-time windfall
+  block (amount, year, target bucket, optional note). Childcare start age moved to
+  All assumptions.
+- **All assumptions** (collapsible `<details>`) — every other input
+- **Compare scenarios** — save the current assumptions as a named scenario; table
+  compares Current vs. saved on debt-free year / Y10 net worth / total interest / FI
+  age. Load or delete any. Scenarios persist in `localStorage` (`plan-scenarios`)
+  **and** sync in the Gist payload.
+- **Your logs** (was "check-ins") — form + table. Blank number fields save as
+  `null` (no data point), NOT zero. Optional free-text note per log renders as an
+  italic sub-row (the shared quarterly journal).
+- Debt payoff chart, **Cost of your debt** (total interest + sensitivity levers),
+  saved-buckets chart (crosshair hover plugin — see below)
 - Year-by-year table
+- **Your road** — milestone timeline (plan start, Lauren attending, childcare,
+  debt-free, house funded, FI)
 - Beyond-year-10 milestones
+- **Sync across devices** (collapsed `<details>`, moved to the bottom)
 
 ## Sync (GitHub Gist)
 
 Data sync across devices works by pushing/pulling a JSON blob
-(`{ updatedAt, assumptions, checkins }`) to/from a private Gist via the GitHub REST
-API, authenticated with a personal access token scoped to `gist` only. Token + Gist
+(`{ updatedAt, assumptions, checkins, scenarios }`) to/from a private Gist via the
+GitHub REST API, authenticated with a personal access token scoped to `gist` only. Token + Gist
 ID are entered once per device and stored in that device's `localStorage`
 (`plan-gh-token`, `plan-gh-gist`) — they are **not** part of the synced data itself,
 for obvious reasons.

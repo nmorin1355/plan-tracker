@@ -185,6 +185,24 @@
   .sb-fill { height: 100%; border-radius: 5px; width: 0; transition: width 0.5s ease; }
   .standing-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
 
+  /* ---------- Your move this year ---------- */
+  .monthly-num { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 6px; color: var(--pine); }
+  .monthly-note { font-size: 13px; color: var(--ink-soft); }
+
+  /* ---------- Cost of debt ---------- */
+  .cost-num { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--rust); margin: 2px 0 4px; }
+
+  /* ---------- Scenarios ---------- */
+  button.btn.btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ---------- Timeline ---------- */
+  .timeline { list-style: none; margin: 0; padding: 0; }
+  .tl-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .tl-year { font-size: 12.5px; color: var(--ink-faint); font-variant-numeric: tabular-nums; min-width: 76px; flex: none; }
+  .tl-label { font-size: 14px; color: var(--ink); }
+
   /* ---------- Windfall block ---------- */
   .windfall-block { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
   .windfall-title { font-family: -apple-system, sans-serif; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: 12px; }
@@ -208,6 +226,7 @@
   .checkin-log table { width: 100%; border-collapse: collapse; }
   .checkin-log th, .checkin-log td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--line); }
   .checkin-log th:first-child, .checkin-log td:first-child { text-align: left; }
+  .log-note-row td { text-align: left; color: var(--ink-soft); font-style: italic; font-size: 12px; padding-top: 0; border-bottom: 1px solid var(--line); }
   .checkin-log th { color: var(--ink-faint); font-weight: 600; font-size: 11px; text-transform: uppercase; }
   .delete-btn { background: none; border: none; color: var(--rust); cursor: pointer; font-size: 12px; font-family: -apple-system, sans-serif; }
   .empty-log { color: var(--ink-faint); font-style: italic; padding: 8px 0; }
@@ -244,6 +263,8 @@
   /* Grid children default to min-width:auto and won't shrink below their content —
      a native iOS date/number field then overflows and overlaps its neighbor. */
   .checkin-grid > *, .slider-grid > *, .adv-grid > * { min-width: 0; }
+  /* Inputs (esp. native date/number fields) must not exceed their grid cell, or they overlap the neighbor */
+  .field input, .field select, .adv-field input { width: 100%; min-width: 0; max-width: 100%; }
   .checkin-actions { flex-wrap: wrap; }
 
   /* Touch devices: inputs must be >=16px or iOS Safari zooms the page on focus */
@@ -336,6 +357,14 @@
         </div>
         <div class="standing-foot ui" id="standing-countdown"></div>
       </div>
+    </div>
+  </section>
+
+  <section id="monthly-section">
+    <h2>Your move this year<span class="h2-line"></span></h2>
+    <div class="card">
+      <div class="monthly-num" id="monthly-target">—</div>
+      <div class="monthly-note ui" id="monthly-note"></div>
     </div>
   </section>
 
@@ -436,16 +465,39 @@
     </details>
   </section>
 
+  <section id="scenario-section">
+    <h2>Compare scenarios<span class="h2-line"></span></h2>
+    <div class="card">
+      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
+        Tweak the assumptions above, then save the result as a named scenario. Compare paths side by side, and load one back anytime.
+      </p>
+      <div class="checkin-actions" style="margin-bottom:16px; flex-wrap:wrap;">
+        <div class="field" style="flex:1; min-width:190px;"><input type="text" id="scenario-name" placeholder="Name this scenario (e.g. Attack debt first)"></div>
+        <button class="btn primary" id="scenario-save">Save current as scenario</button>
+      </div>
+      <div class="table-scroll">
+        <table class="plan-table" id="scenario-table">
+          <thead><tr><th>Scenario</th><th>Debt-free</th><th>Yr 10 net worth</th><th>Total interest</th><th>FI age</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section>
     <h2>Your logs<span class="h2-line"></span></h2>
     <div class="card">
+      <p class="ui" style="font-size:12.5px; color:var(--ink-faint); margin:0 0 12px;">
+        Only fill in what changed — leave a box blank and it keeps your last logged number for that category.
+      </p>
       <div class="checkin-grid">
         <div class="field"><label for="ci-date">Date</label><input type="date" id="ci-date"></div>
-        <div class="field"><label for="ci-loan">Loan balance ($)</label><input type="number" id="ci-loan" placeholder="e.g. 540000"></div>
-        <div class="field"><label for="ci-emergency">Emergency fund ($)</label><input type="number" id="ci-emergency" placeholder="0"></div>
-        <div class="field"><label for="ci-house">House fund ($)</label><input type="number" id="ci-house" placeholder="0"></div>
-        <div class="field"><label for="ci-retirement">Retirement ($)</label><input type="number" id="ci-retirement" placeholder="0"></div>
+        <div class="field"><label for="ci-loan">Loan balance ($)</label><input type="number" id="ci-loan" placeholder="leave blank if unchanged"></div>
+        <div class="field"><label for="ci-emergency">Emergency fund ($)</label><input type="number" id="ci-emergency" placeholder="leave blank if unchanged"></div>
+        <div class="field"><label for="ci-house">House fund ($)</label><input type="number" id="ci-house" placeholder="leave blank if unchanged"></div>
+        <div class="field"><label for="ci-retirement">Retirement ($)</label><input type="number" id="ci-retirement" placeholder="leave blank if unchanged"></div>
       </div>
+      <div class="field" style="margin-bottom:12px;"><label for="ci-note">Note (optional)</label><input type="text" id="ci-note" placeholder="e.g. paid off Nick's loan, got the bonus"></div>
       <div class="checkin-actions">
         <button class="btn primary" id="save-checkin">Save log</button>
         <button class="btn" id="clear-form">Clear</button>
@@ -463,6 +515,21 @@
         <span><span class="lg-dot" style="background:var(--ink);"></span> Your logs</span>
       </div>
       <div class="chart-wrap"><canvas id="debtChart" role="img" aria-label="Line chart of projected loan balance versus your logs"></canvas></div>
+    </div>
+  </section>
+
+  <section id="cost-section">
+    <h2>Cost of your debt<span class="h2-line"></span></h2>
+    <div class="card">
+      <div class="ui" style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-faint);">Total interest over the payoff</div>
+      <div class="cost-num" id="cost-interest">—</div>
+      <div class="adv-group-title" style="margin-top:18px;">What moves the needle</div>
+      <div class="table-scroll">
+        <table class="plan-table" id="levers-table">
+          <thead><tr><th>Extra toward debt</th><th>Debt-free</th><th>Interest saved</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -488,6 +555,13 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <section id="timeline-section">
+    <h2>Your road<span class="h2-line"></span></h2>
+    <div class="card">
+      <ul class="timeline" id="timeline"></ul>
     </div>
   </section>
 
@@ -553,6 +627,7 @@
   const PLAN_YEARS = 10;
   const ASSUMPTIONS_KEY = 'plan-assumptions-v1';
   const CHECKINS_KEY = 'plan-checkins';
+  const SCENARIOS_KEY = 'plan-scenarios';
 
   const DEFAULTS = {
     nickStart: 103000, growth: 3, laurenY1: 65000, laurenY3: 69000, laurenAttending: 300000,
@@ -604,6 +679,7 @@
     let emergency = 0, house = 0, retirement = 0;
     let houseHitYear = null, debtFreeYear = null;
     let lastRetirementContribution = 0;
+    let totalInterest = 0;
     const rows = [];
 
     for (let y = 1; y <= PLAN_YEARS; y++) {
@@ -620,11 +696,14 @@
 
       const windfall = (a.windfallAmount > 0 && Number(a.windfallYear) === y) ? a.windfallAmount : 0;
       const wTarget = a.windfallTarget || 'debt';
-      const surplus = net - living - childcare - lifestyle;
+      const surplus = net - living - childcare - lifestyle + (a.extraAnnual || 0);
 
-      // accrue interest on both tranches
-      if (nickLoan > 0) nickLoan *= (1 + a.nickLoanRate/100);
-      if (laurenLoan > 0) laurenLoan *= (1 + a.laurenLoanRate/100);
+      // accrue interest on both tranches (and tally it for the "cost of debt" view)
+      const nickInterest = nickLoan > 0 ? nickLoan * (a.nickLoanRate/100) : 0;
+      const laurenInterest = laurenLoan > 0 ? laurenLoan * (a.laurenLoanRate/100) : 0;
+      totalInterest += nickInterest + laurenInterest;
+      nickLoan += nickInterest;
+      laurenLoan += laurenInterest;
 
       // avalanche: pay the higher-rate tranche first.
       // A windfall routed to "debt" joins this year's paydown pool; other targets are applied to their bucket after the waterfall.
@@ -680,10 +759,10 @@
       const netWorth = totalSaved - combinedLoanBal;
 
       rows.push({ year: y, age, gross, net, living: living + childcare, lifestyle, debtPmt, loanBal: combinedLoanBal,
-                  emergency, house, retirement, totalSaved, netWorth });
+                  emergency, house, retirement, totalSaved, netWorth, surplus });
     }
 
-    return { rows, debtFreeYear, houseHitYear, nick, lauren, nickProj, laurenProj, lastRetirementContribution };
+    return { rows, debtFreeYear, houseHitYear, nick, lauren, nickProj, laurenProj, lastRetirementContribution, totalInterest };
   }
 
   // ---------- Beyond year 10: extend retirement at flat contribution pace ----------
@@ -726,6 +805,14 @@
   function saveCheckins(list) {
     try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(list)); queueSync(); return true; }
     catch (e) { return false; }
+  }
+  function loadScenarios() {
+    try { const raw = localStorage.getItem(SCENARIOS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch (e) { return []; }
+  }
+  function saveScenarios() {
+    try { localStorage.setItem(SCENARIOS_KEY, JSON.stringify(scenarios)); flashSaved(); } catch (e) {}
+    queueSync();
   }
 
   let saveFlashTimer;
@@ -771,6 +858,7 @@
       if (!remote.updatedAt || remote.updatedAt >= localUpdatedAt) {
         if (remote.assumptions) { assumptions = { ...DEFAULTS, ...remote.assumptions }; localStorage.setItem(ASSUMPTIONS_KEY, JSON.stringify(assumptions)); }
         if (remote.checkins) { checkins = remote.checkins; localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); }
+        if (remote.scenarios) { scenarios = remote.scenarios; localStorage.setItem(SCENARIOS_KEY, JSON.stringify(scenarios)); }
         localStorage.setItem('plan-sync-meta', JSON.stringify({ updatedAt: remote.updatedAt || Date.now() }));
         setSyncStatus('Synced — pulled latest from other devices');
         return 'updated';
@@ -796,7 +884,7 @@
     if (!token || !gistId) return;
     setSyncStatus('Syncing…');
     const updatedAt = Date.now();
-    const payload = { updatedAt, assumptions, checkins };
+    const payload = { updatedAt, assumptions, checkins, scenarios };
     try {
       const res = await fetch('https://api.github.com/gists/' + gistId, {
         method: 'PATCH',
@@ -812,6 +900,7 @@
   }
 
   let checkins = [];
+  let scenarios = [];
 
 
 
@@ -941,7 +1030,13 @@
   }
 
   function checkinsAsPoints(field) {
-    return checkins.map(c => ({ x: yearsSinceStart(new Date(c.date)) + 1, y: c[field] })).sort((a,b) => a.x - b.x);
+    return checkins.filter(c => c[field] != null)
+      .map(c => ({ x: yearsSinceStart(new Date(c.date)) + 1, y: c[field] })).sort((a,b) => a.x - b.x);
+  }
+  // Most recent logged value for a category, ignoring logs that left it blank
+  function latestKnown(field) {
+    const withVal = checkins.filter(c => c[field] != null).sort((a,b) => new Date(b.date) - new Date(a.date));
+    return withVal.length ? withVal[0][field] : null;
   }
   function updateCheckinOverlay() {
     debtChart.data.datasets[1].data = checkinsAsPoints('loan');
@@ -1026,6 +1121,10 @@
     updateCheckinOverlay();
     renderSalaryTable(result);
     renderStanding(result, startingDebt);
+    renderMonthly(result);
+    renderCost(result);
+    renderScenarios(result);
+    renderTimeline(result);
     renderBeyondY10(result);
   }
 
@@ -1036,31 +1135,55 @@
     if (!checkins.length) { empty.style.display = ''; body.style.display = 'none'; return; }
     empty.style.display = 'none'; body.style.display = '';
 
-    const latest = [...checkins].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+    // Use the most recent *known* value per category (blank logs don't reset anything to zero)
+    const loan = latestKnown('loan');
+    const emergency = latestKnown('emergency');
+    const house = latestKnown('house');
+    const retirement = latestKnown('retirement');
+    const latestDate = [...checkins].sort((a, b) => new Date(b.date) - new Date(a.date))[0].date;
+    const dash = '<span style="color:var(--ink-faint);">not logged yet</span>';
 
-    const paid = Math.max(0, startingDebt - latest.loan);
-    const debtPct = startingDebt > 0 ? Math.min(100, paid / startingDebt * 100) : 100;
-    document.getElementById('sb-debt-fill').style.width = debtPct + '%';
-    document.getElementById('sb-debt-val').textContent = fmt(paid) + ' of ' + fmt(startingDebt) + ' (' + Math.round(debtPct) + '%)';
+    if (loan != null) {
+      const paid = Math.max(0, startingDebt - loan);
+      const debtPct = startingDebt > 0 ? Math.min(100, paid / startingDebt * 100) : 100;
+      document.getElementById('sb-debt-fill').style.width = debtPct + '%';
+      document.getElementById('sb-debt-val').textContent = fmt(paid) + ' of ' + fmt(startingDebt) + ' (' + Math.round(debtPct) + '%)';
+    } else {
+      document.getElementById('sb-debt-fill').style.width = '0%';
+      document.getElementById('sb-debt-val').innerHTML = dash;
+    }
 
     const eTarget = assumptions.emergencyTarget;
-    const ePct = eTarget > 0 ? Math.min(100, latest.emergency / eTarget * 100) : 0;
-    document.getElementById('sb-emergency-fill').style.width = ePct + '%';
-    document.getElementById('sb-emergency-val').textContent = fmt(latest.emergency) + ' of ' + fmt(eTarget);
+    if (emergency != null) {
+      document.getElementById('sb-emergency-fill').style.width = (eTarget > 0 ? Math.min(100, emergency / eTarget * 100) : 0) + '%';
+      document.getElementById('sb-emergency-val').textContent = fmt(emergency) + ' of ' + fmt(eTarget);
+    } else {
+      document.getElementById('sb-emergency-fill').style.width = '0%';
+      document.getElementById('sb-emergency-val').innerHTML = dash;
+    }
 
     const hTarget = assumptions.houseTarget;
-    const hPct = hTarget > 0 ? Math.min(100, latest.house / hTarget * 100) : 0;
-    document.getElementById('sb-house-fill').style.width = hPct + '%';
-    document.getElementById('sb-house-val').textContent = fmt(latest.house) + ' of ' + fmt(hTarget);
+    if (house != null) {
+      document.getElementById('sb-house-fill').style.width = (hTarget > 0 ? Math.min(100, house / hTarget * 100) : 0) + '%';
+      document.getElementById('sb-house-val').textContent = fmt(house) + ' of ' + fmt(hTarget);
+    } else {
+      document.getElementById('sb-house-fill').style.width = '0%';
+      document.getElementById('sb-house-val').innerHTML = dash;
+    }
 
-    // verdict: actual net worth vs. where the plan said we'd be on the log date
-    const yrs = yearsSinceStart(new Date(latest.date));
-    const actualNetWorth = (latest.emergency + latest.house + latest.retirement) - latest.loan;
-    const delta = actualNetWorth - projectedNetWorthAt(yrs, result.rows, startingDebt);
-    const ahead = delta >= 0;
-    document.getElementById('standing-verdict').innerHTML =
-      `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'};">${ahead ? '▲' : '▼'} ${fmt(Math.abs(delta))} ${ahead ? 'ahead of' : 'behind'} plan</span>`
-      + `<span style="color:var(--ink-faint); font-weight:400;"> as of ${latest.date}</span>`;
+    // verdict: needs a logged loan balance to anchor; savings default to 0 only if never logged
+    const verdictEl = document.getElementById('standing-verdict');
+    if (loan != null) {
+      const yrs = yearsSinceStart(new Date(latestDate));
+      const actualNetWorth = ((emergency || 0) + (house || 0) + (retirement || 0)) - loan;
+      const delta = actualNetWorth - projectedNetWorthAt(yrs, result.rows, startingDebt);
+      const ahead = delta >= 0;
+      verdictEl.innerHTML =
+        `<span style="color:${ahead ? 'var(--pine)' : 'var(--rust)'};">${ahead ? '▲' : '▼'} ${fmt(Math.abs(delta))} ${ahead ? 'ahead of' : 'behind'} plan</span>`
+        + `<span style="color:var(--ink-faint); font-weight:400;"> as of ${latestDate}</span>`;
+    } else {
+      verdictEl.innerHTML = `<span style="color:var(--ink-faint); font-weight:400;">Log a loan balance to see if you're ahead of or behind plan.</span>`;
+    }
 
     const cd = document.getElementById('standing-countdown');
     if (result.debtFreeYear) {
@@ -1073,6 +1196,105 @@
     } else {
       cd.textContent = 'Debt is not fully cleared within the 10-year plan window.';
     }
+  }
+
+  // ---------- Your move this year ----------
+  function renderMonthly(result) {
+    const today = new Date();
+    const yrsIn = Math.max(0, yearsSinceStart(today));
+    const curYear = Math.min(PLAN_YEARS, Math.max(1, Math.floor(yrsIn) + 1));
+    const row = result.rows[curYear - 1];
+    const numEl = document.getElementById('monthly-target');
+    const noteEl = document.getElementById('monthly-note');
+    const yearLabel = today < PLAN_START ? 'Year 1' : ('Year ' + curYear);
+    if (row.surplus <= 0) {
+      numEl.textContent = 'No surplus';
+      numEl.style.color = 'var(--rust)';
+      noteEl.textContent = `In ${yearLabel} the plan spends about as much as it earns (residency years) — nothing extra to set aside yet. That flips once Lauren reaches her attending salary.`;
+      return;
+    }
+    numEl.style.color = 'var(--pine)';
+    numEl.textContent = '~' + fmt(row.surplus / 12) + '/mo';
+    const goingTo = row.loanBal > 0.01
+      ? 'straight at your loans'
+      : (result.houseHitYear && result.houseHitYear < curYear ? 'into retirement' : 'into your emergency & house funds');
+    const lead = today < PLAN_START
+      ? `Once the plan starts, aim to set aside about this much each month in Year 1`
+      : `To stay on the projected path in ${yearLabel}, set aside about this much each month`;
+    noteEl.textContent = `${lead} — right now that's going ${goingTo}. Check it against your budgeting app.`;
+  }
+
+  // ---------- Cost of debt + levers ----------
+  function renderCost(result) {
+    document.getElementById('cost-interest').textContent = fmt(result.totalInterest);
+    const tbody = document.querySelector('#levers-table tbody');
+    tbody.innerHTML = '';
+    [250, 500, 1000].forEach(extra => {
+      const alt = recompute({ ...assumptions, extraAnnual: extra * 12 });
+      const dfTxt = alt.debtFreeYear ? ('Year ' + alt.debtFreeYear) : 'Beyond Y10';
+      const sooner = (result.debtFreeYear && alt.debtFreeYear && alt.debtFreeYear < result.debtFreeYear)
+        ? ` (${result.debtFreeYear - alt.debtFreeYear} yr sooner)` : '';
+      const saved = Math.max(0, result.totalInterest - alt.totalInterest);
+      tbody.innerHTML += `<tr><td>+${fmt(extra)}/mo</td><td>${dfTxt}${sooner}</td><td>${fmt(saved)}</td></tr>`;
+    });
+  }
+
+  // ---------- Your road (timeline) ----------
+  function renderTimeline(result) {
+    const yearDate = y => new Date(PLAN_START.getFullYear() + y, PLAN_START.getMonth(), 1)
+      .toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const items = [{ y: 0, date: PLAN_START.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }), label: 'The plan begins', color: 'var(--ink-faint)' }];
+    items.push({ y: 4, date: yearDate(4), label: 'Lauren reaches attending salary', color: 'var(--pine)' });
+    if (assumptions.childcare > 0) {
+      const startY = assumptions.childcareAge - START_AGE;
+      if (startY >= 1 && startY <= PLAN_YEARS) items.push({ y: startY, date: yearDate(startY), label: 'Childcare costs begin', color: 'var(--gold)' });
+    }
+    if (result.debtFreeYear) items.push({ y: result.debtFreeYear, date: yearDate(result.debtFreeYear), label: 'Debt-free 🎉', color: 'var(--rust)' });
+    if (result.houseHitYear) items.push({ y: result.houseHitYear, date: yearDate(result.houseHitYear), label: 'House fund complete', color: 'var(--slate)' });
+    const fiTarget = assumptions.fiSpend * 25;
+    const fiAge = findFIAge(result.rows[PLAN_YEARS - 1].retirement, result.lastRetirementContribution, assumptions.retRate, fiTarget);
+    if (fiAge) { const fiY = fiAge - START_AGE; items.push({ y: fiY, date: yearDate(fiY), label: 'Financial independence (25× spending)', color: 'var(--gold)' }); }
+    items.sort((a, b) => a.y - b.y);
+    document.getElementById('timeline').innerHTML = items.map(it =>
+      `<li class="tl-item"><span class="tl-dot" style="background:${it.color};"></span><span class="tl-year ui">${it.date}</span><span class="tl-label ui">${it.label}</span></li>`
+    ).join('');
+  }
+
+  // ---------- Scenario comparison ----------
+  function scenarioMetrics(a) {
+    const res = recompute(a);
+    const fiAge = findFIAge(res.rows[PLAN_YEARS - 1].retirement, res.lastRetirementContribution, a.retRate, a.fiSpend * 25);
+    return {
+      debtFree: res.debtFreeYear ? ('Year ' + res.debtFreeYear) : 'Beyond Y10',
+      y10: fmtSigned(res.rows[PLAN_YEARS - 1].netWorth),
+      interest: fmt(res.totalInterest),
+      fi: fiAge ? ('Age ' + fiAge) : '—'
+    };
+  }
+  function renderScenarios() {
+    const tbody = document.querySelector('#scenario-table tbody');
+    if (!tbody) return;
+    const cur = scenarioMetrics(assumptions);
+    let html = `<tr class="current-row"><td>Current (live)</td><td>${cur.debtFree}</td><td>${cur.y10}</td><td>${cur.interest}</td><td>${cur.fi}</td><td></td></tr>`;
+    if (!scenarios.length) {
+      html += `<tr><td colspan="6" class="empty-log" style="text-align:left;">No saved scenarios yet — adjust assumptions above, then save one.</td></tr>`;
+    }
+    scenarios.forEach(s => {
+      const m = scenarioMetrics({ ...DEFAULTS, ...s.assumptions });
+      html += `<tr><td>${s.name.replace(/</g, '&lt;')}</td><td>${m.debtFree}</td><td>${m.y10}</td><td>${m.interest}</td><td>${m.fi}</td>`
+        + `<td style="white-space:nowrap;"><button class="btn btn-sm scenario-load" data-id="${s.id}">Load</button> <button class="delete-btn scenario-del" data-id="${s.id}">delete</button></td></tr>`;
+    });
+    tbody.innerHTML = html;
+    tbody.querySelectorAll('.scenario-load').forEach(b => b.addEventListener('click', () => {
+      const s = scenarios.find(x => x.id === b.dataset.id);
+      if (!s) return;
+      assumptions = { ...DEFAULTS, ...s.assumptions };
+      syncQuickSliders(); syncAdvancedFields(); render(); saveAssumptions();
+    }));
+    tbody.querySelectorAll('.scenario-del').forEach(b => b.addEventListener('click', () => {
+      scenarios = scenarios.filter(x => x.id !== b.dataset.id);
+      saveScenarios(); renderScenarios();
+    }));
   }
 
   // ---------- Pace vs. plan ----------
@@ -1190,6 +1412,15 @@
     });
   });
 
+  document.getElementById('scenario-save').addEventListener('click', () => {
+    const nameEl = document.getElementById('scenario-name');
+    const name = nameEl.value.trim() || ('Scenario ' + (scenarios.length + 1));
+    scenarios.push({ id: Date.now().toString(), name, assumptions: { ...assumptions } });
+    nameEl.value = '';
+    saveScenarios();
+    renderScenarios();
+  });
+
   document.getElementById('btn-save-assumptions').addEventListener('click', saveAssumptions);
   document.getElementById('btn-reset').addEventListener('click', () => {
     assumptions = { ...DEFAULTS };
@@ -1204,9 +1435,11 @@
     const el = document.getElementById('checkin-log');
     if (!checkins.length) { el.innerHTML = '<div class="empty-log">No logs yet — add your first above.</div>'; return; }
     const sorted = [...checkins].sort((a,b) => new Date(b.date) - new Date(a.date));
+    const cell = v => v == null ? '<span style="color:var(--ink-faint);">—</span>' : fmt(v);
     let html = '<table><thead><tr><th>Date</th><th>Loan</th><th>Emergency</th><th>House</th><th>Retirement</th><th></th></tr></thead><tbody>';
     sorted.forEach(c => {
-      html += `<tr><td>${c.date}</td><td>${fmt(c.loan)}</td><td>${fmt(c.emergency)}</td><td>${fmt(c.house)}</td><td>${fmt(c.retirement)}</td><td><button class="delete-btn" data-id="${c.id}">remove</button></td></tr>`;
+      html += `<tr><td>${c.date}</td><td>${cell(c.loan)}</td><td>${cell(c.emergency)}</td><td>${cell(c.house)}</td><td>${cell(c.retirement)}</td><td><button class="delete-btn" data-id="${c.id}">remove</button></td></tr>`;
+      if (c.note) html += `<tr class="log-note-row"><td colspan="6">“${c.note.replace(/</g,'&lt;')}”</td></tr>`;
     });
     html += '</tbody></table>';
     el.innerHTML = html;
@@ -1215,30 +1448,39 @@
         checkins = checkins.filter(c => c.id !== btn.dataset.id);
         await saveCheckins(checkins);
         renderLog();
-        updateCheckinOverlay();
+        render();
       });
     });
   }
 
+  // Blank field => null (no data point), NOT zero — so a partial log doesn't read as "paid it all off"
+  function readNum(id) {
+    const v = document.getElementById(id).value.trim();
+    return v === '' ? null : (parseFloat(v) || 0);
+  }
   document.getElementById('ci-date').valueAsDate = new Date();
   document.getElementById('save-checkin').addEventListener('click', async () => {
     const date = document.getElementById('ci-date').value;
-    const loan = parseFloat(document.getElementById('ci-loan').value) || 0;
-    const emergency = parseFloat(document.getElementById('ci-emergency').value) || 0;
-    const house = parseFloat(document.getElementById('ci-house').value) || 0;
-    const retirement = parseFloat(document.getElementById('ci-retirement').value) || 0;
+    const loan = readNum('ci-loan');
+    const emergency = readNum('ci-emergency');
+    const house = readNum('ci-house');
+    const retirement = readNum('ci-retirement');
+    const note = document.getElementById('ci-note').value.trim();
     const status = document.getElementById('checkin-status');
     if (!date) { status.textContent = 'Pick a date first.'; status.style.color = '#a8502c'; return; }
-    checkins.push({ id: Date.now().toString(), date, loan, emergency, house, retirement });
+    if (loan == null && emergency == null && house == null && retirement == null && !note) {
+      status.textContent = 'Enter at least one number.'; status.style.color = '#a8502c'; return;
+    }
+    checkins.push({ id: Date.now().toString(), date, loan, emergency, house, retirement, note });
     const ok = await saveCheckins(checkins);
     status.style.color = ok ? '#1f4d3a' : '#a8502c';
     status.textContent = ok ? 'Saved.' : 'Save failed — try again.';
     renderLog();
-    updateCheckinOverlay();
+    render();
     setTimeout(() => { status.textContent = ''; }, 2200);
   });
   document.getElementById('clear-form').addEventListener('click', () => {
-    ['ci-loan','ci-emergency','ci-house','ci-retirement'].forEach(id => document.getElementById(id).value = '');
+    ['ci-loan','ci-emergency','ci-house','ci-retirement','ci-note'].forEach(id => document.getElementById(id).value = '');
   });
 
   // ---------- Theme ----------
@@ -1289,6 +1531,7 @@
     const saved = loadAssumptions();
     if (saved) assumptions = { ...DEFAULTS, ...saved };
     checkins = loadCheckins();
+    scenarios = loadScenarios();
 
     const { token, gistId } = getGhCreds();
     if (token && gistId) {
@@ -1297,6 +1540,7 @@
       const result = await pullFromGist();
       if (result === 'updated') {
         checkins = loadCheckins();
+        scenarios = loadScenarios();
         const raw = loadAssumptions();
         if (raw) assumptions = { ...DEFAULTS, ...raw };
       }

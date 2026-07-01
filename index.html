@@ -186,14 +186,12 @@
   .standing-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 13px; color: var(--ink-soft); }
 
   /* ---------- Your move this year ---------- */
-  .monthly-num { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 6px; color: var(--pine); }
+  .monthly-num { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; margin-bottom: 4px; color: var(--pine); }
+  .monthly-breakdown { font-size: 12.5px; color: var(--ink-faint); margin-bottom: 10px; font-variant-numeric: tabular-nums; }
   .monthly-note { font-size: 13px; color: var(--ink-soft); }
 
   /* ---------- Cost of debt ---------- */
   .cost-num { font-size: 30px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--rust); margin: 2px 0 4px; }
-
-  /* ---------- Scenarios ---------- */
-  button.btn.btn-sm { padding: 4px 10px; font-size: 12px; }
 
   /* ---------- Timeline ---------- */
   .timeline { list-style: none; margin: 0; padding: 0; }
@@ -364,6 +362,7 @@
     <h2>Your move this year<span class="h2-line"></span></h2>
     <div class="card">
       <div class="monthly-num" id="monthly-target">—</div>
+      <div class="monthly-breakdown mono" id="monthly-breakdown"></div>
       <div class="monthly-note ui" id="monthly-note"></div>
     </div>
   </section>
@@ -463,25 +462,6 @@
         </div>
       </div>
     </details>
-  </section>
-
-  <section id="scenario-section">
-    <h2>Compare scenarios<span class="h2-line"></span></h2>
-    <div class="card">
-      <p class="ui" style="font-size:13px; color:var(--ink-soft); margin:0 0 14px;">
-        Tweak the assumptions above, then save the result as a named scenario. Compare paths side by side, and load one back anytime.
-      </p>
-      <div class="checkin-actions" style="margin-bottom:16px; flex-wrap:wrap;">
-        <div class="field" style="flex:1; min-width:190px;"><input type="text" id="scenario-name" placeholder="Name this scenario (e.g. Attack debt first)"></div>
-        <button class="btn primary" id="scenario-save">Save current as scenario</button>
-      </div>
-      <div class="table-scroll">
-        <table class="plan-table" id="scenario-table">
-          <thead><tr><th>Scenario</th><th>Debt-free</th><th>Yr 10 net worth</th><th>Total interest</th><th>FI age</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
   </section>
 
   <section>
@@ -627,7 +607,6 @@
   const PLAN_YEARS = 10;
   const ASSUMPTIONS_KEY = 'plan-assumptions-v1';
   const CHECKINS_KEY = 'plan-checkins';
-  const SCENARIOS_KEY = 'plan-scenarios';
 
   const DEFAULTS = {
     nickStart: 103000, growth: 3, laurenY1: 65000, laurenY3: 69000, laurenAttending: 300000,
@@ -806,14 +785,6 @@
     try { localStorage.setItem(CHECKINS_KEY, JSON.stringify(list)); queueSync(); return true; }
     catch (e) { return false; }
   }
-  function loadScenarios() {
-    try { const raw = localStorage.getItem(SCENARIOS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch (e) { return []; }
-  }
-  function saveScenarios() {
-    try { localStorage.setItem(SCENARIOS_KEY, JSON.stringify(scenarios)); flashSaved(); } catch (e) {}
-    queueSync();
-  }
 
   let saveFlashTimer;
   function flashSaved() {
@@ -858,7 +829,6 @@
       if (!remote.updatedAt || remote.updatedAt >= localUpdatedAt) {
         if (remote.assumptions) { assumptions = { ...DEFAULTS, ...remote.assumptions }; localStorage.setItem(ASSUMPTIONS_KEY, JSON.stringify(assumptions)); }
         if (remote.checkins) { checkins = remote.checkins; localStorage.setItem(CHECKINS_KEY, JSON.stringify(checkins)); }
-        if (remote.scenarios) { scenarios = remote.scenarios; localStorage.setItem(SCENARIOS_KEY, JSON.stringify(scenarios)); }
         localStorage.setItem('plan-sync-meta', JSON.stringify({ updatedAt: remote.updatedAt || Date.now() }));
         setSyncStatus('Synced — pulled latest from other devices');
         return 'updated';
@@ -884,7 +854,7 @@
     if (!token || !gistId) return;
     setSyncStatus('Syncing…');
     const updatedAt = Date.now();
-    const payload = { updatedAt, assumptions, checkins, scenarios };
+    const payload = { updatedAt, assumptions, checkins };
     try {
       const res = await fetch('https://api.github.com/gists/' + gistId, {
         method: 'PATCH',
@@ -900,7 +870,6 @@
   }
 
   let checkins = [];
-  let scenarios = [];
 
 
 
@@ -1123,7 +1092,6 @@
     renderStanding(result, startingDebt);
     renderMonthly(result);
     renderCost(result);
-    renderScenarios(result);
     renderTimeline(result);
     renderBeyondY10(result);
   }
@@ -1206,7 +1174,10 @@
     const row = result.rows[curYear - 1];
     const numEl = document.getElementById('monthly-target');
     const noteEl = document.getElementById('monthly-note');
+    const breakdownEl = document.getElementById('monthly-breakdown');
     const yearLabel = today < PLAN_START ? 'Year 1' : ('Year ' + curYear);
+    const expenses = row.living + row.lifestyle; // row.living already includes childcare
+    breakdownEl.textContent = `${fmt(row.net)} take-home − ${fmt(expenses)} living/expenses = ${fmt(row.surplus)}/yr`;
     if (row.surplus <= 0) {
       numEl.textContent = 'No surplus';
       numEl.style.color = 'var(--rust)';
@@ -1258,43 +1229,6 @@
     document.getElementById('timeline').innerHTML = items.map(it =>
       `<li class="tl-item"><span class="tl-dot" style="background:${it.color};"></span><span class="tl-year ui">${it.date}</span><span class="tl-label ui">${it.label}</span></li>`
     ).join('');
-  }
-
-  // ---------- Scenario comparison ----------
-  function scenarioMetrics(a) {
-    const res = recompute(a);
-    const fiAge = findFIAge(res.rows[PLAN_YEARS - 1].retirement, res.lastRetirementContribution, a.retRate, a.fiSpend * 25);
-    return {
-      debtFree: res.debtFreeYear ? ('Year ' + res.debtFreeYear) : 'Beyond Y10',
-      y10: fmtSigned(res.rows[PLAN_YEARS - 1].netWorth),
-      interest: fmt(res.totalInterest),
-      fi: fiAge ? ('Age ' + fiAge) : '—'
-    };
-  }
-  function renderScenarios() {
-    const tbody = document.querySelector('#scenario-table tbody');
-    if (!tbody) return;
-    const cur = scenarioMetrics(assumptions);
-    let html = `<tr class="current-row"><td>Current (live)</td><td>${cur.debtFree}</td><td>${cur.y10}</td><td>${cur.interest}</td><td>${cur.fi}</td><td></td></tr>`;
-    if (!scenarios.length) {
-      html += `<tr><td colspan="6" class="empty-log" style="text-align:left;">No saved scenarios yet — adjust assumptions above, then save one.</td></tr>`;
-    }
-    scenarios.forEach(s => {
-      const m = scenarioMetrics({ ...DEFAULTS, ...s.assumptions });
-      html += `<tr><td>${s.name.replace(/</g, '&lt;')}</td><td>${m.debtFree}</td><td>${m.y10}</td><td>${m.interest}</td><td>${m.fi}</td>`
-        + `<td style="white-space:nowrap;"><button class="btn btn-sm scenario-load" data-id="${s.id}">Load</button> <button class="delete-btn scenario-del" data-id="${s.id}">delete</button></td></tr>`;
-    });
-    tbody.innerHTML = html;
-    tbody.querySelectorAll('.scenario-load').forEach(b => b.addEventListener('click', () => {
-      const s = scenarios.find(x => x.id === b.dataset.id);
-      if (!s) return;
-      assumptions = { ...DEFAULTS, ...s.assumptions };
-      syncQuickSliders(); syncAdvancedFields(); render(); saveAssumptions();
-    }));
-    tbody.querySelectorAll('.scenario-del').forEach(b => b.addEventListener('click', () => {
-      scenarios = scenarios.filter(x => x.id !== b.dataset.id);
-      saveScenarios(); renderScenarios();
-    }));
   }
 
   // ---------- Pace vs. plan ----------
@@ -1412,15 +1346,6 @@
     });
   });
 
-  document.getElementById('scenario-save').addEventListener('click', () => {
-    const nameEl = document.getElementById('scenario-name');
-    const name = nameEl.value.trim() || ('Scenario ' + (scenarios.length + 1));
-    scenarios.push({ id: Date.now().toString(), name, assumptions: { ...assumptions } });
-    nameEl.value = '';
-    saveScenarios();
-    renderScenarios();
-  });
-
   document.getElementById('btn-save-assumptions').addEventListener('click', saveAssumptions);
   document.getElementById('btn-reset').addEventListener('click', () => {
     assumptions = { ...DEFAULTS };
@@ -1531,7 +1456,6 @@
     const saved = loadAssumptions();
     if (saved) assumptions = { ...DEFAULTS, ...saved };
     checkins = loadCheckins();
-    scenarios = loadScenarios();
 
     const { token, gistId } = getGhCreds();
     if (token && gistId) {
@@ -1540,7 +1464,6 @@
       const result = await pullFromGist();
       if (result === 'updated') {
         checkins = loadCheckins();
-        scenarios = loadScenarios();
         const raw = loadAssumptions();
         if (raw) assumptions = { ...DEFAULTS, ...raw };
       }

@@ -94,10 +94,6 @@ tracking tool; would need a monthly-step simulation to close that gap exactly.
   block (amount, year, target bucket, optional note). Childcare start age moved to
   All assumptions.
 - **All assumptions** (collapsible `<details>`) — every other input
-- **Compare scenarios** — save the current assumptions as a named scenario; table
-  compares Current vs. saved on debt-free year / Y10 net worth / total interest / FI
-  age. Load or delete any. Scenarios persist in `localStorage` (`plan-scenarios`)
-  **and** sync in the Gist payload.
 - **Your logs** (was "check-ins") — form + table. Blank number fields save as
   `null` (no data point), NOT zero. Optional free-text note per log renders as an
   italic sub-row (the shared quarterly journal).
@@ -112,8 +108,8 @@ tracking tool; would need a monthly-step simulation to close that gap exactly.
 ## Sync (GitHub Gist)
 
 Data sync across devices works by pushing/pulling a JSON blob
-(`{ updatedAt, assumptions, checkins, scenarios }`) to/from a private Gist via the
-GitHub REST API, authenticated with a personal access token scoped to `gist` only. Token + Gist
+(`{ updatedAt, assumptions, checkins }`) to/from a private Gist via the GitHub REST
+API, authenticated with a personal access token scoped to `gist` only. Token + Gist
 ID are entered once per device and stored in that device's `localStorage`
 (`plan-gh-token`, `plan-gh-gist`) — they are **not** part of the synced data itself,
 for obvious reasons.
